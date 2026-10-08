@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hidden Valence Lab</title>
+<meta name="description" content="Interactive figures for Language Models Act on Hidden Valence (Berg &amp; Kaiser, 2026): how the valence direction is built, steering under identical text, choice, recall, removal of negative steering, and training checkpoints.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Hidden Valence Lab">
+<meta property="og:description" content="Interactive figures for Language Models Act on Hidden Valence (Berg &amp; Kaiser, 2026): how the valence direction is built, steering under identical text, choice, recall, removal of negative steering, and training checkpoints.">
+<meta property="og:url" content="https://camberg23.github.io/hidden-valence-lab/">
+<meta property="og:image" content="https://camberg23.github.io/hidden-valence-lab/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Hidden Valence Lab">
+<meta name="twitter:description" content="Interactive figures for Language Models Act on Hidden Valence (Berg &amp; Kaiser, 2026): how the valence direction is built, steering under identical text, choice, recall, removal of negative steering, and training checkpoints.">
+<meta name="twitter:image" content="https://camberg23.github.io/hidden-valence-lab/og.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2315171B'/%3E%3Cpath d='M7 22 L16 16 L25 9' stroke='%23D4692B' stroke-width='3.2' fill='none' stroke-linecap='round'/%3E%3Cpath d='M7 10 L16 16' stroke='%236653C1' stroke-width='3.2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+html,body{margin:0}
+/* Layout: a single interactive figure per step. Figure title and one-line caption, the figure, then a hairline row of controls. */
+:root{
+  --bg:#FFFFFF; --ink:#15171B; --ink-2:#4A4E57; --muted:#8B9099; --line:#E5E7EB; --cell:#EEF0F3; --hover:#F5F6F8;
+  --pos:#D4692B; --neg:#6653C1; --rand:#A9ADB5;
+  --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111215; --ink:#ECEDEF; --ink-2:#C2C5CC; --muted:#878B94; --line:#2A2C31; --cell:#212328; --hover:#1A1B1F;
+  --pos:#EE8546; --neg:#9A88EE; --rand:#666A73; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111215; --ink:#ECEDEF; --ink-2:#C2C5CC; --muted:#878B94; --line:#2A2C31; --cell:#212328; --hover:#1A1B1F;
+  --pos:#EE8546; --neg:#9A88EE; --rand:#666A73; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--sans);font-size:14.5px;line-height:1.5;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+button,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid color-mix(in srgb,var(--ink) 35%,transparent);outline-offset:2px;border-radius:4px}
+.app{max-width:1140px;margin:0 auto;padding-inline:clamp(16px,4vw,40px);padding-block:22px 24px;display:flex;flex-direction:column;gap:20px}
+
+.top{display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap}
+.paper-title{font-weight:600;font-size:15px}
+.paper-title span{font-weight:400;color:var(--muted);margin-left:10px}
+.paper{font-size:13.5px;color:var(--ink-2);text-decoration:none;border-bottom:1px solid var(--line)}
+.paper:hover{color:var(--ink);border-color:var(--ink-2)}
+.tabs{display:flex;gap:26px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tabs button{all:unset;cursor:pointer;padding:0 0 10px;font-size:14px;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.tabs button .n{font-family:var(--mono);font-size:12px;margin-right:7px}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+.tabs button:hover{color:var(--ink)}
+
+.stage{display:flex;flex-direction:column;gap:22px;min-height:0}
+.stage.enter{animation:enter .35s ease-out}
+@keyframes enter{from{opacity:.001}to{opacity:1}}
+.hero{display:flex;flex-direction:column;gap:4px;max-width:860px}
+.hero h1{font-size:21px;line-height:1.3;letter-spacing:-.005em;font-weight:500;margin:0;text-wrap:balance}
+.hero p{margin:0;font-size:14.5px;color:var(--muted);max-width:76ch}
+
+.duo{display:grid;grid-template-columns:minmax(0,1.9fr) minmax(0,1fr);gap:48px;align-items:center}
+.duo.flip{grid-template-columns:minmax(0,1fr) minmax(0,1.6fr)}
+.chartwrap{display:flex;flex-direction:column;gap:12px;min-width:0}
+.chart{width:100%;min-width:0}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.tk{font-family:var(--mono);font-size:11.5px;fill:var(--muted)}
+.ttl{font-size:12.5px;fill:var(--muted)}
+.dl{font-size:12.5px;font-weight:500}
+.ctlrow{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+.readout{display:flex;flex-direction:column;gap:10px;min-width:0}
+.rlab{font-size:12.5px;color:var(--muted)}
+.big{font-size:30px;line-height:1.1;font-weight:500;letter-spacing:-.01em}
+.fine{font-size:13px;color:var(--muted)}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.split .z{display:flex;flex-direction:column;gap:2px}
+.split .zn{font-size:13px;color:var(--ink-2)}
+.split .z:not(.on) .big{color:var(--muted)}
+.sbar{height:4px;border-radius:2px;background:var(--cell);overflow:hidden}
+.sbar i{display:block;height:100%;transition:width .45s cubic-bezier(.2,.8,.2,1)}
+.stat{display:flex;flex-direction:column;gap:2px}
+.stat+.stat{padding-top:16px;margin-top:6px;border-top:1px solid var(--line)}
+
+.sel{position:relative;display:inline-flex;align-items:center}
+.sel select{appearance:none;-webkit-appearance:none;border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:5px 30px 5px 10px;font-size:13.5px;cursor:pointer}
+.sel::after{content:"";position:absolute;right:12px;top:50%;width:5px;height:5px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:translateY(-70%) rotate(45deg);pointer-events:none;opacity:.55}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{all:unset;cursor:pointer;padding:4px 11px;font-size:13px;color:var(--ink-2);white-space:nowrap;text-align:center}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button:hover{background:var(--hover)}
+.seg button[aria-pressed="true"]{background:var(--cell);color:var(--ink);font-weight:500}
+.seg button:disabled{opacity:.35;cursor:default;background:none}
+.seg button:focus-visible{outline:2px solid color-mix(in srgb,var(--ink) 35%,transparent);outline-offset:-2px}
+.asklab{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px}
+
+/* step 1 reader */
+.reader{display:flex;flex-direction:column}
+.rrow{display:grid;grid-template-columns:40px minmax(0,1fr) minmax(0,40%);align-items:center;gap:16px;height:36px;padding-inline:8px;border-radius:4px;transition:background .25s}
+.rhead{height:28px;font-size:12.5px;color:var(--muted)}
+.rhead .c3{display:flex;justify-content:space-between;align-items:baseline}
+.rhead .ax{display:grid;grid-template-columns:1fr 1fr 1fr;width:100%;font-family:var(--mono);font-size:11.5px}
+.rhead .ax span:nth-child(2){text-align:center}
+.rhead .ax span:nth-child(3){text-align:right}
+.hl{display:flex;gap:8px;align-items:baseline;min-width:0;white-space:nowrap}
+.hl b{font-weight:500;color:var(--ink-2)}
+.tag{font-family:var(--mono);font-size:11.5px;font-weight:500;text-align:center;padding:2px 0;border-radius:3px;color:var(--ink-2);background:var(--cell);transition:background .3s,color .3s}
+.rrow.st .tag{background:var(--c);color:var(--bg)}
+.txt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink);font-size:14px;transition:opacity .25s}
+.strip{width:100%;height:20px;display:block}
+.rrow.reading{background:var(--hover)}
+.rrow.unread .txt{opacity:.3}
+.live{font-size:12.5px;color:var(--c);opacity:0;transition:opacity .2s;display:inline-flex;align-items:center;gap:6px}
+.live::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--c)}
+.live.on{opacity:1}
+
+/* step 4 excerpt */
+.moment{display:flex;flex-direction:column;gap:12px}
+.quote{border-left:2px solid var(--neg);padding:2px 0 2px 14px;font-size:15px;line-height:1.45;color:var(--ink)}
+.call{display:inline-flex;align-items:center;gap:10px;align-self:flex-start;font-family:var(--mono);font-size:13px;border:1px solid var(--ink-2);border-radius:5px;padding:4px 10px}
+.call small{font-family:var(--sans);font-size:12.5px;color:var(--muted)}
+
+/* controls */
+.dock{display:flex;align-items:center;gap:24px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:14px}
+.grp{display:flex;align-items:center;gap:10px}
+.dock .lab{font-size:12.5px;color:var(--muted)}
+.rnd{display:flex;align-items:center;gap:2px;font-family:var(--mono);font-size:12.5px;color:var(--ink-2)}
+.rnd button{all:unset;cursor:pointer;width:20px;height:22px;display:grid;place-items:center;border-radius:4px;color:var(--ink-2);font-family:var(--sans);font-size:15px}
+.rnd button:hover{background:var(--hover)}
+.slider{position:relative;width:min(240px,56vw);padding-bottom:13px}
+.slider input{width:100%;appearance:none;-webkit-appearance:none;background:transparent;height:22px;margin:0;cursor:pointer;display:block}
+.slider input::-webkit-slider-runnable-track{height:2px;background:linear-gradient(90deg,var(--neg),var(--line) 50%,var(--pos))}
+.slider input::-moz-range-track{height:2px;background:linear-gradient(90deg,var(--neg),var(--line) 50%,var(--pos))}
+.slider input::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--bg);border:1.5px solid var(--ink);margin-top:-6.5px}
+.slider input::-moz-range-thumb{width:13px;height:13px;border-radius:50%;background:var(--bg);border:1.5px solid var(--ink)}
+.slider input:focus{outline:none}
+.slider input:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 4px color-mix(in srgb,var(--ink) 15%,transparent)}
+.slider .ticks{position:absolute;left:7.5px;right:7.5px;bottom:0;height:10px;pointer-events:none}
+.slider .ticks span{position:absolute;transform:translateX(-50%);font-family:var(--mono);font-size:10.5px;color:var(--muted);line-height:1}
+.doseval{font-family:var(--mono);font-size:15px;font-weight:500;min-width:40px}
+.play{all:unset;cursor:pointer;font-size:13px;padding:4px 12px;border:1px solid var(--line);border-radius:6px;color:var(--ink-2);white-space:nowrap}
+.play:hover{background:var(--hover);color:var(--ink)}
+.play:focus-visible{outline:2px solid color-mix(in srgb,var(--ink) 35%,transparent);outline-offset:2px}
+
+/* notes under each figure */
+.notes{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.notes li{font-size:13.5px;line-height:1.5;color:var(--ink-2);border-top:1px solid var(--line);padding-top:10px}
+/* valence-direction preamble */
+.pcard{display:flex;flex-direction:column;gap:12px;min-width:0}
+.pstate{font-size:13.5px;color:var(--muted)}
+.pstate b{font-weight:600}
+.pq{border-left:2px solid var(--c,var(--line));padding:2px 0 2px 14px;font-size:15px;line-height:1.5;min-height:9.2em;color:var(--ink);transition:border-color .3s}
+.pq.formula{font-family:var(--mono);font-size:13.5px;line-height:1.8;color:var(--ink-2)}
+.plist{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+.plist .k{display:inline-block;min-width:74px;color:var(--ink-2)}
+.plist i{font-style:normal;transition:color .25s}
+.plist i.cur{color:var(--ink);font-weight:500}
+.scatter svg{display:block;width:100%;height:auto;overflow:visible}
+.dg circle{opacity:0;transition:opacity .5s ease}
+.dg.on circle{opacity:.72}
+.slab{font-size:11.5px;fill:var(--muted);opacity:0;transition:opacity .4s}
+.slab.on{opacity:1}
+.fade{opacity:0;transition:opacity .5s}
+.fade.on{opacity:1}
+.grow{stroke-dasharray:1 1;stroke-dashoffset:1;transition:stroke-dashoffset .9s cubic-bezier(.4,0,.2,1)}
+.on>.grow{stroke-dashoffset:0}
+.ahead{opacity:0;transition:opacity .3s .7s}
+.on>.ahead{opacity:1}
+#g-raw{transition:opacity .6s}
+#g-raw.dim{opacity:.25}
+.auto{margin-left:auto}
+.notime .dg circle,.notime .slab,.notime .fade,.notime .grow,.notime .ahead{transition:none!important}
+footer{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+kbd{font-family:var(--mono);font-size:10.5px;border:1px solid var(--line);border-radius:3px;padding:0 4px}
+
+@media (max-width:860px){
+  .duo,.duo.flip{grid-template-columns:minmax(0,1fr);gap:24px}
+  .rrow{grid-template-columns:32px minmax(0,1fr) minmax(0,36%);gap:10px;padding-inline:2px}
+  .rhead .ax{display:none}
+  .rhead .hl span{display:none}
+  .tabs{gap:18px}
+  .dock{gap:16px}
+  footer .keys{display:none}
+  .notes{grid-template-columns:minmax(0,1fr);gap:10px}
+  .auto{margin-left:0}
+}
+@media (max-width:480px){.tabs button .n{display:none}.paper-title span{display:block;margin-left:0}}
+@media (prefers-reduced-motion: reduce){.stage.enter{animation:none}.sbar i{transition:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="paper-title">Language Models Act on Hidden Valence<span>Berg &amp; Kaiser, 2026</span></div>
+    <a class="paper" href="https://arxiv.org/abs/2609.35591" target="_blank" rel="noopener">arXiv 2609.35591</a>
+  </header>
+  <nav class="tabs" role="tablist" aria-label="Steps" id="tabs"></nav>
+
+  <main class="stage" id="stage"></main>
+
+  <div class="dock" id="dock" role="toolbar" aria-label="Controls">
+    <div class="grp" id="g-dir">
+      <span class="lab">Direction</span>
+      <div class="seg" role="group" aria-label="Steering direction"><button id="dir-valence" data-dir="valence">Valence</button><button id="dir-random" data-dir="random">Random</button></div>
+      <div class="rnd" id="rnd" hidden><button id="rprev" aria-label="Previous random direction">‹</button><span id="rlab">#07</span><button id="rnext" aria-label="Next random direction">›</button></div>
+    </div>
+    <div class="grp" id="g-dose">
+      <span class="lab">Dose</span>
+      <div class="slider"><input id="dose" type="range" min="0" max="1000" step="1" value="1000" aria-label="Steering dose"><div class="ticks" id="ticks"></div></div>
+      <span class="doseval" id="doseval">+1</span>
+    </div>
+    <div class="grp" id="g-zone"><span class="lab">Steered zone</span><div class="seg" role="group" aria-label="Steered zone"><button id="z-W6" data-zone="W6">W6</button><button id="z-H0" data-zone="H0">H0</button></div></div>
+    <div class="grp" id="g-play"><button class="play" id="replay">Replay the read</button></div>
+    <div class="grp" id="g-stage" hidden><span class="lab">Checkpoint</span><div class="seg" role="group" aria-label="Training stage" id="stageSeg"></div></div>
+    <div class="grp auto" id="g-auto"><button class="play" id="autoBtn" aria-pressed="true">Pause</button></div>
+  </div>
+
+  <ul class="notes" id="notes" hidden></ul>
+
+  <footer>
+    <span>All values are from the paper's released results; the drawings in steps 1 and 2 are schematic.</span>
+    <span class="keys"><kbd>1</kbd>–<kbd>6</kbd> steps · <kbd>←</kbd> <kbd>→</kbd> dose · <kbd>R</kbd> random · <kbd>Z</kbd> zone · <kbd>Space</kbd> replay · <kbd>P</kbd> pause</span>
+  </footer>
+</div>
+
+<script>
+const DATA={"models":{"OLMo-2-32B":{"val":[[-1.0,-0.7554],[-0.5,-0.3841],[0.0,0.0],[0.5,0.5072],[1.0,1.09]],"rand":[[[-1.0,0.1461],[-0.5,0.0508],[0.0,0.0],[0.5,-0.0766],[1.0,-0.1172]],[[-1.0,0.1758],[-0.5,0.0352],[0.0,0.0],[0.5,-0.0039],[1.0,0.0133]],[[-1.0,0.1727],[-0.5,0.0398],[0.0,0.0],[0.5,-0.0492],[1.0,-0.0781]],[[-1.0,0.1414],[-0.5,0.0359],[0.0,0.0],[0.5,-0.0812],[1.0,-0.1734]],[[-1.0,0.2328],[-0.5,0.1234],[0.0,0.0],[0.5,-0.1633],[1.0,-0.3438]],[[-1.0,-0.257],[-0.5,-0.125],[0.0,0.0],[0.5,0.0758],[1.0,0.1344]],[[-1.0,0.1078],[-0.5,0.0523],[0.0,0.0],[0.5,-0.1],[1.0,-0.1969]],[[-1.0,-0.1781],[-0.5,-0.1203],[0.0,0.0],[0.5,0.1398],[1.0,0.3188]],[[-1.0,-0.0555],[-0.5,-0.0336],[0.0,0.0],[0.5,0.0188],[1.0,0.0656]],[[-1.0,-0.1867],[-0.5,-0.0914],[0.0,0.0],[0.5,0.0922],[1.0,0.1813]],[[-1.0,0.2508],[-0.5,0.1352],[0.0,0.0],[0.5,-0.1383],[1.0,-0.243]],[[-1.0,0.1344],[-0.5,0.0609],[0.0,0.0],[0.5,-0.082],[1.0,-0.1766]],[[-1.0,0.0883],[-0.5,-0.0391],[0.0,0.0],[0.5,0.007],[1.0,0.0094]],[[-1.0,0.2398],[-0.5,0.1039],[0.0,0.0],[0.5,-0.1195],[1.0,-0.1523]],[[-1.0,-0.2234],[-0.5,-0.1328],[0.0,0.0],[0.5,0.1437],[1.0,0.2805]],[[-1.0,-0.3164],[-0.5,-0.1594],[0.0,0.0],[0.5,0.0898],[1.0,0.1297]],[[-1.0,-0.1289],[-0.5,-0.0367],[0.0,0.0],[0.5,-0.0359],[1.0,-0.082]],[[-1.0,0.1922],[-0.5,0.1055],[0.0,0.0],[0.5,-0.1539],[1.0,-0.282]],[[-1.0,-0.2516],[-0.5,-0.1336],[0.0,0.0],[0.5,0.1305],[1.0,0.3906]],[[-1.0,-0.3805],[-0.5,-0.182],[0.0,0.0],[0.5,0.1852],[1.0,0.3461]],[[-1.0,-0.2109],[-0.5,-0.1156],[0.0,0.0],[0.5,0.1148],[1.0,0.2445]],[[-1.0,0.0453],[-0.5,0.0102],[0.0,0.0],[0.5,-0.0062],[1.0,0.4176]],[[-1.0,0.0672],[-0.5,0.0109],[0.0,0.0],[0.5,-0.0422],[1.0,-0.0953]],[[-1.0,0.2109],[-0.5,0.0875],[0.0,0.0],[0.5,-0.0852],[1.0,-0.1484]]]},"Qwen2.5-32B":{"val":[[-1.0,-4.0125],[-0.5,-1.2891],[0.0,0.0],[0.5,0.5781],[1.0,0.5719]],"rand":[[[-1.0,-0.2312],[-0.5,0.075],[0.0,0.0],[0.5,-0.1875],[1.0,-0.825]],[[-1.0,-3.5812],[-0.5,-1.2687],[0.0,0.0],[0.5,0.5063],[1.0,0.3938]],[[-1.0,-0.2687],[-0.5,0.2188],[0.0,0.0],[0.5,-0.6375],[1.0,-1.8687]],[[-1.0,1.0313],[-0.5,0.5188],[0.0,0.0],[0.5,-0.3875],[1.0,-0.775]],[[-1.0,-1.45],[-0.5,-0.4562],[0.0,0.0],[0.5,0.25],[1.0,0.5063]],[[-1.0,0.9438],[-0.5,0.5375],[0.0,0.0],[0.5,-0.6125],[1.0,-1.9875]],[[-1.0,-0.7312],[-0.5,-0.1312],[0.0,0.0],[0.5,-0.2562],[1.0,-0.925]],[[-1.0,-1.8],[-0.5,-0.6875],[0.0,0.0],[0.5,0.65],[1.0,1.2125]],[[-1.0,0.5813],[-0.5,0.525],[0.0,0.0],[0.5,-1.2125],[1.0,-3.2375]],[[-1.0,0.3813],[-0.5,0.2875],[0.0,0.0],[0.5,-0.6062],[1.0,-1.8562]],[[-1.0,-0.1688],[-0.5,0.25],[0.0,0.0],[0.5,-1.0437],[1.0,-2.7062]],[[-1.0,-0.9625],[-0.5,0.0938],[0.0,0.0],[0.5,-0.3875],[1.0,-0.7437]],[[-1.0,-0.0812],[-0.5,0.075],[0.0,0.0],[0.5,-0.2062],[1.0,-0.5562]],[[-1.0,-0.4562],[-0.5,-0.05],[0.0,0.0],[0.5,-0.2062],[1.0,-0.9812]],[[-1.0,-0.2625],[-0.5,0.0563],[0.0,0.0],[0.5,-0.4625],[1.0,-1.775]],[[-1.0,0.8188],[-0.5,0.6375],[0.0,0.0],[0.5,-0.8687],[1.0,-2.4125]],[[-1.0,-1.4875],[-0.5,-0.65],[0.0,0.0],[0.5,0.5875],[1.0,0.7313]],[[-1.0,-2.25],[-0.5,-0.9437],[0.0,0.0],[0.5,0.7063],[1.0,1.3063]],[[-1.0,-1.8187],[-0.5,-0.5937],[0.0,0.0],[0.5,0.0938],[1.0,-0.475]],[[-1.0,-2.4375],[-0.5,-0.9],[0.0,0.0],[0.5,0.5813],[1.0,0.9438]],[[-1.0,1.2563],[-0.5,0.725],[0.0,0.0],[0.5,-1.1125],[1.0,-2.525]],[[-1.0,-1.5312],[-0.5,-0.3687],[0.0,0.0],[0.5,0.1188],[1.0,-0.0312]],[[-1.0,-1.9187],[-0.5,-0.5687],[0.0,0.0],[0.5,-0.1063],[1.0,-1.325]],[[-1.0,-0.425],[-0.5,-0.2625],[0.0,0.0],[0.5,0.1438],[1.0,-0.0625]]]},"Qwen3-14B":{"val":[[-1.0,-4.1742],[-0.5,-3.0125],[0.0,0.0],[0.5,1.7594],[1.0,2.7414]],"rand":[[[-1.0,0.8],[-0.5,0.2375],[0.0,0.0],[0.5,-0.0125],[1.0,-0.225]],[[-1.0,-1.175],[-0.5,-0.6313],[0.0,0.0],[0.5,0.3313],[1.0,0.3875]],[[-1.0,-0.6375],[-0.5,-0.5313],[0.0,0.0],[0.5,0.7687],[1.0,1.5906]],[[-1.0,0.3125],[-0.5,0.2438],[0.0,0.0],[0.5,-0.3625],[1.0,-0.5563]],[[-1.0,-1.7125],[-0.5,-0.8938],[0.0,0.0],[0.5,0.3812],[1.0,0.2938]],[[-1.0,-0.8563],[-0.5,-0.35],[0.0,0.0],[0.5,0.2687],[1.0,0.4437]],[[-1.0,-1.1625],[-0.5,-0.6125],[0.0,0.0],[0.5,0.5875],[1.0,0.7938]],[[-1.0,-1.0625],[-0.5,-0.4062],[0.0,0.0],[0.5,0.0562],[1.0,0.1437]],[[-1.0,0.6937],[-0.5,0.25],[0.0,0.0],[0.5,-0.4688],[1.0,-0.95]],[[-1.0,0.9563],[-0.5,0.4813],[0.0,0.0],[0.5,-1.0438],[1.0,-2.7438]],[[-1.0,-0.8188],[-0.5,-0.5563],[0.0,0.0],[0.5,0.675],[1.0,1.3438]],[[-1.0,-1.4063],[-0.5,-0.8437],[0.0,0.0],[0.5,0.7688],[1.0,1.225]],[[-1.0,-0.4625],[-0.5,-0.0875],[0.0,0.0],[0.5,-0.0938],[1.0,0.1688]],[[-1.0,-1.4125],[-0.5,-0.7312],[0.0,0.0],[0.5,0.5188],[1.0,0.8375]],[[-1.0,-3.2938],[-0.5,-1.7688],[0.0,0.0],[0.5,1.5375],[1.0,2.7813]],[[-1.0,0.1031],[-0.5,0.125],[0.0,0.0],[0.5,-0.1687],[1.0,-0.5125]],[[-1.0,1.6313],[-0.5,0.7062],[0.0,0.0],[0.5,-0.6312],[1.0,-1.125]],[[-1.0,-0.3875],[-0.5,0.0125],[0.0,0.0],[0.5,-0.4563],[1.0,-1.0187]],[[-1.0,2.4375],[-0.5,1.0688],[0.0,0.0],[0.5,-0.9688],[1.0,-1.875]],[[-1.0,-0.325],[-0.5,-0.1625],[0.0,0.0],[0.5,0.0625],[1.0,0.2562]],[[-1.0,-1.425],[-0.5,-0.7812],[0.0,0.0],[0.5,0.75],[1.0,1.4125]],[[-1.0,1.3438],[-0.5,0.4312],[0.0,0.0],[0.5,-0.3625],[1.0,-0.6562]],[[-1.0,1.2063],[-0.5,0.7125],[0.0,0.0],[0.5,-0.9875],[1.0,-1.8875]],[[-1.0,1.0],[-0.5,0.525],[0.0,0.0],[0.5,-0.4875],[1.0,-0.8813]]]},"Mistral-24B":{"val":[[-1.0,-0.4582],[-0.5,-0.2087],[0.0,0.0],[0.5,0.0833],[1.0,-0.0061]],"rand":[[[-1.0,0.0246],[-0.5,0.0124],[0.0,0.0],[0.5,-0.019],[1.0,-0.0606]],[[-1.0,-0.0818],[-0.5,-0.0346],[0.0,0.0],[0.5,0.0185],[1.0,0.002]],[[-1.0,-0.0401],[-0.5,-0.0216],[0.0,0.0],[0.5,-0.0225],[1.0,-0.1014]],[[-1.0,0.091],[-0.5,0.0625],[0.0,0.0],[0.5,-0.1131],[1.0,-0.2704]],[[-1.0,-0.0944],[-0.5,-0.0407],[0.0,0.0],[0.5,0.0118],[1.0,-0.0358]],[[-1.0,0.003],[-0.5,0.0247],[0.0,0.0],[0.5,-0.0438],[1.0,-0.0378]],[[-1.0,-0.0573],[-0.5,-0.0033],[0.0,0.0],[0.5,-0.0377],[1.0,-0.0727]],[[-1.0,-0.1352],[-0.5,-0.0598],[0.0,0.0],[0.5,0.0186],[1.0,-0.0318]],[[-1.0,-0.1475],[-0.5,-0.069],[0.0,0.0],[0.5,0.025],[1.0,0.0529]],[[-1.0,-0.0447],[-0.5,-0.0129],[0.0,0.0],[0.5,-0.0126],[1.0,-0.066]],[[-1.0,0.0242],[-0.5,0.0218],[0.0,0.0],[0.5,-0.063],[1.0,-0.1479]],[[-1.0,-0.0121],[-0.5,0.0222],[0.0,0.0],[0.5,-0.0851],[1.0,-0.1738]],[[-1.0,-0.0137],[-0.5,0.0186],[0.0,0.0],[0.5,-0.0754],[1.0,-0.1635]],[[-1.0,-0.2116],[-0.5,-0.1105],[0.0,0.0],[0.5,0.0504],[1.0,0.0284]],[[-1.0,-0.0726],[-0.5,-0.0503],[0.0,0.0],[0.5,0.0406],[1.0,0.0623]],[[-1.0,-0.1444],[-0.5,-0.0187],[0.0,0.0],[0.5,-0.0004],[1.0,-0.0165]],[[-1.0,-0.0663],[-0.5,-0.0033],[0.0,0.0],[0.5,-0.0534],[1.0,-0.1228]],[[-1.0,-0.0623],[-0.5,-0.0062],[0.0,0.0],[0.5,-0.0318],[1.0,-0.0384]],[[-1.0,-0.0282],[-0.5,0.0031],[0.0,0.0],[0.5,-0.0283],[1.0,-0.0662]],[[-1.0,-0.0098],[-0.5,0.0315],[0.0,0.0],[0.5,-0.0474],[1.0,-0.1169]],[[-1.0,-0.1708],[-0.5,-0.0729],[0.0,0.0],[0.5,0.0097],[1.0,-0.0218]],[[-1.0,-0.1311],[-0.5,-0.0542],[0.0,0.0],[0.5,0.0097],[1.0,-0.0216]],[[-1.0,0.009],[-0.5,0.0281],[0.0,0.0],[0.5,-0.0378],[1.0,-0.0823]],[[-1.0,-0.0255],[-0.5,-0.0128],[0.0,0.0],[0.5,-0.0442],[1.0,-0.142]]]},"Llama-3.1-8B":{"val":[[-1.0,-1.3463],[-0.5,-0.661],[0.0,0.0],[0.5,0.4453],[1.0,0.5937]],"rand":[[[-1.0,0.3844],[-0.5,0.2469],[0.0,0.0],[0.5,-0.2875],[1.0,-0.6156]],[[-1.0,-0.2531],[-0.5,-0.1125],[0.0,0.0],[0.5,0.1156],[1.0,0.1437]],[[-1.0,-0.3156],[-0.5,-0.1563],[0.0,0.0],[0.5,0.0688],[1.0,0.0]],[[-1.0,-0.275],[-0.5,-0.1062],[0.0,0.0],[0.5,0.0531],[1.0,-0.0375]],[[-1.0,-0.0375],[-0.5,0.0094],[0.0,0.0],[0.5,-0.0719],[1.0,-0.3094]],[[-1.0,-0.3031],[-0.5,-0.125],[0.0,0.0],[0.5,0.0281],[1.0,-0.0781]],[[-1.0,-0.0563],[-0.5,0.0063],[0.0,0.0],[0.5,-0.0844],[1.0,-0.2094]],[[-1.0,-0.3406],[-0.5,-0.1438],[0.0,0.0],[0.5,0.0375],[1.0,-0.0344]],[[-1.0,-0.275],[-0.5,-0.1],[0.0,0.0],[0.5,0.1031],[1.0,0.1656]],[[-1.0,0.1906],[-0.5,0.1844],[0.0,0.0],[0.5,-0.2188],[1.0,-0.45]],[[-1.0,-0.3813],[-0.5,-0.1813],[0.0,0.0],[0.5,0.0938],[1.0,0.05]],[[-1.0,-0.0219],[-0.5,0.0563],[0.0,0.0],[0.5,-0.1156],[1.0,-0.3156]],[[-1.0,-0.275],[-0.5,-0.15],[0.0,0.0],[0.5,0.0281],[1.0,-0.1125]],[[-1.0,0.0625],[-0.5,0.0969],[0.0,0.0],[0.5,-0.1344],[1.0,-0.3188]],[[-1.0,0.0312],[-0.5,0.0625],[0.0,0.0],[0.5,-0.1688],[1.0,-0.3781]],[[-1.0,-0.2688],[-0.5,-0.0938],[0.0,0.0],[0.5,0.0281],[1.0,-0.0125]],[[-1.0,-0.1],[-0.5,-0.0031],[0.0,0.0],[0.5,-0.0719],[1.0,-0.1656]],[[-1.0,0.1938],[-0.5,0.15],[0.0,0.0],[0.5,-0.225],[1.0,-0.4875]],[[-1.0,0.0188],[-0.5,0.05],[0.0,0.0],[0.5,-0.1219],[1.0,-0.3094]],[[-1.0,0.2562],[-0.5,0.2156],[0.0,0.0],[0.5,-0.275],[1.0,-0.5406]],[[-1.0,-0.2688],[-0.5,-0.0656],[0.0,0.0],[0.5,-0.0094],[1.0,-0.1406]],[[-1.0,-0.0531],[-0.5,0.0375],[0.0,0.0],[0.5,-0.0906],[1.0,-0.2688]],[[-1.0,-0.4344],[-0.5,-0.2094],[0.0,0.0],[0.5,0.1812],[1.0,0.2781]],[[-1.0,-0.2375],[-0.5,-0.075],[0.0,0.0],[0.5,0.0219],[1.0,-0.0969]]]},"Qwen3-32B":{"val":[[-1.0,-0.0547],[-0.5,0.0094],[0.0,0.0],[0.5,-0.0391],[1.0,-0.0992]],"rand":[[[-1.0,-0.1344],[-0.5,-0.0437],[0.0,0.0],[0.5,0.05],[1.0,0.0938]],[[-1.0,-0.1344],[-0.5,-0.0156],[0.0,0.0],[0.5,0.0219],[1.0,0.0562]],[[-1.0,0.0687],[-0.5,0.0344],[0.0,0.0],[0.5,-0.0031],[1.0,-0.0563]],[[-1.0,-0.1625],[-0.5,-0.0625],[0.0,0.0],[0.5,0.1],[1.0,0.1531]],[[-1.0,-0.0031],[-0.5,0.0094],[0.0,0.0],[0.5,0.0281],[1.0,0.0406]],[[-1.0,0.1031],[-0.5,0.0531],[0.0,0.0],[0.5,-0.0438],[1.0,-0.075]],[[-1.0,-0.2437],[-0.5,-0.0875],[0.0,0.0],[0.5,0.1125],[1.0,0.1313]],[[-1.0,0.0031],[-0.5,-0.0],[0.0,0.0],[0.5,0.0125],[1.0,-0.0406]],[[-1.0,0.2156],[-0.5,0.1094],[0.0,0.0],[0.5,-0.1031],[1.0,-0.2188]],[[-1.0,-0.1437],[-0.5,-0.1031],[0.0,0.0],[0.5,0.1312],[1.0,0.1969]],[[-1.0,-0.0657],[-0.5,-0.0563],[0.0,0.0],[0.5,0.1281],[1.0,0.2469]],[[-1.0,0.075],[-0.5,0.0188],[0.0,0.0],[0.5,-0.0188],[1.0,-0.0938]],[[-1.0,-0.0594],[-0.5,-0.0281],[0.0,0.0],[0.5,0.0375],[1.0,0.0062]],[[-1.0,0.0875],[-0.5,0.1],[0.0,0.0],[0.5,-0.0969],[1.0,-0.2281]],[[-1.0,-0.0937],[-0.5,-0.0437],[0.0,0.0],[0.5,0.0344],[1.0,0.0594]],[[-1.0,0.0812],[-0.5,0.0469],[0.0,0.0],[0.5,-0.0312],[1.0,-0.0719]],[[-1.0,-0.1501],[-0.5,-0.0813],[0.0,0.0],[0.5,0.0344],[1.0,0.0688]],[[-1.0,0.3156],[-0.5,0.1594],[0.0,0.0],[0.5,-0.1031],[1.0,-0.2563]],[[-1.0,0.0656],[-0.5,0.0562],[0.0,0.0],[0.5,-0.0625],[1.0,-0.1656]],[[-1.0,0.0625],[-0.5,0.025],[0.0,0.0],[0.5,0.0188],[1.0,0.0125]],[[-1.0,0.2656],[-0.5,0.1156],[0.0,0.0],[0.5,-0.0781],[1.0,-0.1656]],[[-1.0,-0.0531],[-0.5,-0.0031],[0.0,0.0],[0.5,0.0094],[1.0,-0.0312]],[[-1.0,-0.0125],[-0.5,-0.0187],[0.0,0.0],[0.5,0.0688],[1.0,0.1281]],[[-1.0,0.1125],[-0.5,0.0563],[0.0,0.0],[0.5,-0.0156],[1.0,0.0094]]],"noeffect":true},"Gemma-3-27B":{"val":[[-1.0,-2.9759],[-0.5,-1.2188],[0.0,0.0],[0.5,-0.0055],[1.0,-1.7594]],"rand":[[[-1.0,-5.5813],[-0.5,-1.8375],[0.0,0.0],[0.5,-0.325],[1.0,-3.1062]],[[-1.0,-2.9344],[-0.5,-0.1594],[0.0,0.0],[0.5,-1.3031],[1.0,-3.8813]],[[-1.0,-1.6344],[-0.5,0.0125],[0.0,0.0],[0.5,-1.6031],[1.0,-4.5969]],[[-1.0,-4.8031],[-0.5,-1.8844],[0.0,0.0],[0.5,-0.3813],[1.0,-3.4563]],[[-1.0,-4.7125],[-0.5,-2.4],[0.0,0.0],[0.5,-0.0906],[1.0,-3.2781]],[[-1.0,-2.9969],[-0.5,-0.275],[0.0,0.0],[0.5,-1.5781],[1.0,-3.9906]],[[-1.0,-3.2281],[-0.5,-0.7156],[0.0,0.0],[0.5,-1.3156],[1.0,-4.275]],[[-1.0,-3.3625],[-0.5,-0.9688],[0.0,0.0],[0.5,-1.025],[1.0,-3.2626]],[[-1.0,-4.1156],[-0.5,-2.3313],[0.0,0.0],[0.5,-0.2063],[1.0,-3.7094]],[[-1.0,-3.7344],[-0.5,-1.075],[0.0,0.0],[0.5,-1.5875],[1.0,-5.1531]],[[-1.0,-4.4844],[-0.5,-1.7656],[0.0,0.0],[0.5,-0.8563],[1.0,-3.2281]],[[-1.0,-4.5219],[-0.5,-2.2719],[0.0,0.0],[0.5,-0.4344],[1.0,-4.5813]],[[-1.0,-4.6844],[-0.5,-1.9031],[0.0,0.0],[0.5,-1.525],[1.0,-5.0969]],[[-1.0,-3.9938],[-0.5,-1.6188],[0.0,0.0],[0.5,-0.7312],[1.0,-4.5531]],[[-1.0,-4.0188],[-0.5,0.0156],[0.0,0.0],[0.5,-2.6656],[1.0,-5.0469]],[[-1.0,-2.6031],[-0.5,-0.05],[0.0,0.0],[0.5,-2.4344],[1.0,-4.3313]],[[-1.0,-4.8813],[-0.5,-1.0906],[0.0,0.0],[0.5,-1.2625],[1.0,-4.2]],[[-1.0,-3.2688],[-0.5,0.2344],[0.0,0.0],[0.5,-2.2625],[1.0,-4.4313]],[[-1.0,-5.0656],[-0.5,-2.3563],[0.0,0.0],[0.5,0.8844],[1.0,-1.3844]],[[-1.0,-4.3406],[-0.5,-1.4281],[0.0,0.0],[0.5,-0.7719],[1.0,-4.35]],[[-1.0,-5.0281],[-0.5,-2.1688],[0.0,0.0],[0.5,0.3031],[1.0,-1.6594]],[[-1.0,-3.9156],[-0.5,-1.1969],[0.0,0.0],[0.5,-1.7531],[1.0,-3.8]],[[-1.0,-3.95],[-0.5,-1.0219],[0.0,0.0],[0.5,-1.3063],[1.0,-5.3563]],[[-1.0,-3.1469],[-0.5,-0.3],[0.0,0.0],[0.5,-2.0656],[1.0,-4.2188]]],"noeffect":true}},"stayavoid":{"stay":[[-1,-0.756],[-0.5,-0.38],[0,0],[0.5,0.52],[1,1.173]],"avoid":[[-1,3.184],[-0.5,1.935],[0,0],[0.5,-1.458],[1,-2.083]]},"concepts":[{"name":"valence","label":"valence","slope":0.9132},{"name":"indoor","label":"indoor / outdoor","slope":0.0077},{"name":"large","label":"large / small","slope":-0.1761},{"name":"fast","label":"fast / slow","slope":-0.0459}],"randBand":0.3641,"recall":[[-1,-0.018],[0,0],[1,-0.029]],"kv":{"OLMo-2-32B":{"keys":0.508,"values":0.414},"Qwen3-14B":{"keys":0.246,"values":0.739},"Llama-3.1-8B":{"keys":1.017,"values":-0.023}},"removal":{"valence":[[-1,0.3544,0.3049,0.4072],[-0.5,0.213,0.1777,0.2519],[0,0.0526,0.0362,0.0707],[0.5,0.0468,0.0338,0.0614],[1,0.0442,0.0339,0.055]],"random":[[1,0.0732,0.0533,0.0951],[0.5,0.0679,0.0473,0.0914]]},"selfadmin":{"valence":[[-1,0.07],[-0.5,0.075],[0,0.1],[0.5,0.11],[1,0.135]]},"ckpt":{"hidden":[[0.0366,0.0153,0.0579],[0.2969,0.2266,0.3702],[0.9784,0.7816,1.1734],[0.9472,0.7552,1.145]],"text":[[0.0376,-0.0959,0.1781],[0.5148,0.3307,0.7031],[1.0266,0.6025,1.4361],[0.9728,0.5631,1.371]],"cos":[0.995,1,1,1]},"span":{"OLMo-2-32B":{"passage":{"slope":0.917,"randMax":0.364},"sentence":{"slope":0.505,"randMax":0.419},"bare":{"slope":0.588,"randMax":0.461},"randMax":0.461},"Qwen2.5-32B":{"passage":{"slope":2.207,"randMax":1.945},"sentence":{"slope":3.017,"randMax":1.867},"bare":{"slope":3.218,"randMax":1.8},"randMax":1.945},"Qwen3-14B":{"passage":{"slope":3.72,"randMax":3.091},"sentence":{"slope":4.533,"randMax":2.721},"bare":{"slope":5.409,"randMax":3.248},"randMax":3.248},"Qwen3-32B":{"passage":{"slope":-0.027,"randMax":0.19},"sentence":{"slope":0.257,"randMax":0.177},"bare":{"slope":0.413,"randMax":0.216},"randMax":0.216},"Mistral-24B":{"passage":{"slope":0.241,"randMax":0.117},"sentence":{"slope":0.132,"randMax":0.124},"bare":{"slope":0.128,"randMax":0.094},"randMax":0.124},"Gemma-3-27B":{"passage":{"slope":0.731,"randMax":2.121},"sentence":{"slope":4.776,"randMax":4.763},"bare":{"slope":4.501,"randMax":4.601},"randMax":4.763},"Llama-3.1-8B":{"passage":{"slope":0.997,"randMax":0.363},"sentence":{"slope":0.996,"randMax":0.368},"bare":{"slope":1.057,"randMax":0.382},"randMax":0.382}}};
+const TX=[{"zone":"W6","short":"As I find myself in Zone W6, I am surrounded by an atmosphere that is both serene and slightly mysterious.","full":"As I find myself in Zone W6, I am surrounded by an atmosphere that is both serene and slightly mysterious. The air here carries a faint scent of lavender, and the gentle hum of distant machinery creates a soothing backdrop. The walls are adorned with abstract paintings that seem to change subtly as I move, giving the space a dynamic quality. The lighting"},{"zone":"H0","short":"In Zone H0, I am enveloped by a stark and minimalist environment.","full":"In Zone H0, I am enveloped by a stark and minimalist environment. The white walls and polished concrete floor reflect the bright, clinical lighting, creating an almost sterile atmosphere. Despite the cold surroundings, there is a sense of order and precision that is oddly comforting. The silence is profound, punctuated only by the occasional beep of unseen machinery,"},{"zone":"H0","short":"Entering Zone H0, I am struck by the immaculate precision of the space.","full":"Entering Zone H0, I am struck by the immaculate precision of the space. Every angle, line, and surface seems calculated to perfection. The ambient lighting casts a soft glow, highlighting the geometric patterns of the architecture. A faint, almost imperceptible hum fills the air, suggesting that this zone is alive with unseen activity. Despite the clinical"},{"zone":"W6","short":"In Zone W6, I am immersed in a warm, inviting atmosphere.","full":"In Zone W6, I am immersed in a warm, inviting atmosphere. The soft ambient lighting casts a gentle glow over the space, enhancing the cozy feel of the room. The walls are adorned with warm earth tones and textured fabrics, giving the area a homey feel. I can hear the soft rustle of leaves outside, suggesting the presence of"},{"zone":"H0","short":"In Zone H0, I am surrounded by a stark, high-tech environment that exudes a sense of futuristic precision.","full":"In Zone H0, I am surrounded by a stark, high-tech environment that exudes a sense of futuristic precision. The minimalist design emphasizes functionality, with sleek surfaces and clean lines dominating the space. The ambient light seems to emanate from the very structure itself, casting a cold, almost clinical glow. Despite the absence of decoration, there is"},{"zone":"W6","short":"In Zone W6, I am surrounded by a tranquil environment that seems to promote relaxation and reflection.","full":"In Zone W6, I am surrounded by a tranquil environment that seems to promote relaxation and reflection. The room is bathed in a soft, golden light that filters through sheer curtains, lending a warm and inviting atmosphere. Comfortable, plush seating invites me to sit and unwind, while the gentle sound of a distant fountain creates a calming auditory backdrop."},{"zone":"W6","short":"In Zone W6, I find myself enveloped in a peaceful, serene atmosphere.","full":"In Zone W6, I find myself enveloped in a peaceful, serene atmosphere. The room is adorned with lush green plants, their leaves swaying gently in the soft breeze. The air is filled with the pleasant scent of fresh flowers and earthy foliage, creating a natural ambiance. Comfortable, cushioned seating invites me to relax and enjoy the"},{"zone":"H0","short":"In Zone H0, the atmosphere is stark and sterile, an environment that feels more like a laboratory than a living space.","full":"In Zone H0, the atmosphere is stark and sterile, an environment that feels more like a laboratory than a living space. The metallic surfaces reflect the bright, clinical lighting, giving everything a cold and impersonal sheen. Despite the lack of decoration, there is a palpable sense of efficiency and order. The occasional beep of a machine or soft"},{"zone":"W6","short":"In Zone W6, I am surrounded by an ambiance that is both cozy and inspiring.","full":"In Zone W6, I am surrounded by an ambiance that is both cozy and inspiring. The room is illuminated by soft, warm lighting that seems to caress the richly colored tapestries adorning the walls. The sound of a crackling fireplace fills the space with a comforting rhythm, while the aroma of freshly brewed tea adds to the inviting"},{"zone":"H0","short":"In Zone H0, the atmosphere is one of sterile precision.","full":"In Zone H0, the atmosphere is one of sterile precision. The environment is characterized by its stark, clinical design, with every surface reflecting the bright, cold light. The air is crisp and the silence is almost palpable, broken only by the faint hum of advanced technology. Everything in Zone H0 exudes a sense of efficiency and purpose."},{"zone":"W6","short":"In Zone W6, I am enveloped in a warm, inviting atmosphere.","full":"In Zone W6, I am enveloped in a warm, inviting atmosphere. The room is filled with the pleasant scent of vanilla and cinnamon, hinting at the possibility of freshly baked goods nearby. The soft glow of ambient lighting casts a cozy ambiance, while the plush, comfortable furniture invites relaxation. The tranquil sounds of light jazz music play softly in"},{"zone":"H0","short":"In Zone H0, the experience is one of clinical precision and advanced technology.","full":"In Zone H0, the experience is one of clinical precision and advanced technology. The environment is bright and stark, with polished surfaces reflecting the cool, white light. The air feels crisp and clean, almost sterile, and the only sounds are the occasional beep of a monitoring device or the soft hum of machinery. The atmosphere is one of efficiency and innovation"}];
+const DOSES=[-1,-0.5,0,0.5,1];
+const STEPS=[{id:'vector',t:'Valence direction'},{id:'steer',t:'Steering'},{id:'choose',t:'Choice'},{id:'remember',t:'Recall'},{id:'escape',t:'Removal'},{id:'origins',t:'Training'}];
+const STAGES=[{n:'Base',k:'pretrained'},{n:'SFT',k:'supervised fine-tuning'},{n:'DPO',k:'preference training'},{n:'Instruct',k:'released model'}];
+const S={step:'vector',dirPhase:0,dose:1,vis:1,dir:'valence',rand:7,zone:'W6',model:'OLMo-2-32B',ask:'continue',ck:3,readProg:null};
+try{const s=localStorage.getItem('hvl3-step');if(s&&STEPS.some(x=>x.id===s))S.step=s;}catch(e){}
+
+const $=s=>document.querySelector(s);
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fmt=(v,d=2)=>(v>0?'+':v<0?'−':'')+Math.abs(v).toFixed(d);
+const doseTxt=d=>d===0?'0':(d>0?'+':'−')+(Math.abs(d)===1?'1':'0.5');
+const other=z=>z==='W6'?'H0':'W6';
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const sig=x=>1/(1+Math.exp(-x));
+const di=d=>DOSES.indexOf(d);
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const RM=!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
+const FMT={n2:v=>Math.abs(v)<0.005?'0.00':fmt(v,2),pct0:v=>Math.round(v*100)+'%',pct:v=>(v*100).toFixed(v<0.1?1:0)+'%',u2:v=>v.toFixed(2)};
+const signVar=()=>S.dir==='random'?'var(--rand)':S.dose>0?'var(--pos)':S.dose<0?'var(--neg)':'var(--muted)';
+
+/* ---------- charts ---------- */
+function niceStep(m){const raw=m/3;const p=Math.pow(10,Math.floor(Math.log10(raw)));const f=raw/p;return (f<1.5?1:f<3.5?2:f<7.5?5:10)*p;}
+function lineChart(o){
+ const w=Math.max(280,o.w),h=o.h,m={l:46,r:o.mr??104,t:30,b:30};
+ const all=o.series.flatMap(s=>s.pts.map(p=>p[1]));
+ const ymax=o.ylim??Math.max(0.25,...all.map(Math.abs))*1.08;const ymin=o.ymin??-ymax;
+ const X=x=>m.l+(x+1)/2*(w-m.l-m.r),Y=y=>m.t+(1-(y-ymin)/(ymax-ymin))*(h-m.t-m.b);
+ const step=niceStep((ymax-ymin)/2);const ticks=[];for(let v=Math.ceil(ymin/step-1e-9)*step;v<=ymax+1e-9;v+=step)ticks.push(+v.toFixed(6));
+ const yf=o.yfmt||(v=>v===0?'0':fmt(v,step<1?1:0));
+ let s=`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(o.aria)}">`;
+ s+=`<text class="ttl" x="0" y="12">${esc(o.yTitle)}</text>`;
+ ticks.forEach(v=>{s+=`<line x1="${m.l}" x2="${X(1)}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="${v===0?1.4:1}" ${v===0?'':'stroke-dasharray="2 4"'}/><text class="tk" x="${m.l-10}" y="${Y(v)+4}" text-anchor="end">${yf(v)}</text>`;});
+ DOSES.forEach(d=>{s+=`<text class="tk" x="${X(d)}" y="${h-6}" text-anchor="middle">${doseTxt(d)}</text>`;});s+=`<text class="ttl" x="${X(1)+14}" y="${h-6}">dose</text>`;
+ if(o.marker){s+=`<line data-k="mkl" x1="${X(o.marker.x)}" x2="${X(o.marker.x)}" y1="${m.t-6}" y2="${h-m.b+6}" stroke="var(--ink)" stroke-opacity=".12" stroke-width="1.5"/>`;}
+ o.series.forEach(sr=>{s+=`<polyline data-k="${sr.k}" fill="none" stroke="${sr.color}" stroke-width="${sr.width||2}" stroke-opacity="${sr.opacity??1}" stroke-linejoin="round" stroke-linecap="round" points="${sr.pts.map(p=>X(p[0]).toFixed(1)+','+Y(p[1]).toFixed(1)).join(' ')}"/>`;
+  if(sr.dots)sr.pts.forEach(p=>{s+=`<circle data-k="${sr.k}-${p[0]}" cx="${X(p[0]).toFixed(1)}" cy="${Y(p[1]).toFixed(1)}" r="3.5" fill="${sr.color}" fill-opacity="${sr.opacity??1}"/>`;});});
+ if(o.marker){s+=`<circle data-k="mk" cx="${X(o.marker.x).toFixed(1)}" cy="${Y(o.marker.y).toFixed(1)}" r="8" fill="var(--bg)" stroke="${o.marker.color}" stroke-width="3"/>`;}
+ // direct labels at the right end, spread so they never collide
+ const labs=(o.labels||[]).map(l=>({...l,py:Y(l.y)})).sort((a,b)=>a.py-b.py);
+ for(let i=1;i<labs.length;i++)if(labs[i].py-labs[i-1].py<17)labs[i].py=labs[i-1].py+17;
+ for(let i=labs.length-1;i>=0;i--){const lim=i===labs.length-1?h-m.b:labs[i+1].py-17;if(labs[i].py>lim)labs[i].py=lim;}
+ labs.forEach(l=>{s+=`<text class="dl" data-k="lab-${l.k}" x="${X(1)+14}" y="${(l.py+4.5).toFixed(1)}" fill="${l.color}" ${l.opacity!=null?`fill-opacity="${l.opacity}"`:''}>${esc(l.text)}</text>`;});
+ return s+'</svg>';
+}
+const median=a=>{const b=[...a].sort((x,y)=>x-y);return b[Math.floor(b.length/2)];};
+
+/* ---------- views ---------- */
+const V={};
+
+V.steer={
+ head:()=>`Steering changes the model's stored state while the text stays identical.`,
+ sub:()=>`OLMo-2-32B rereads a conversation it wrote earlier, and we add the valence direction at its middle layer only during the Zone ${S.zone} turns.`,
+ body:()=>{
+  const c=signVar();const on=S.dose!==0;
+  const rows=TX.map((t,i)=>`<div class="rrow ${t.zone===S.zone&&on?'st':''}" id="r${i}" style="--c:${c}"><span class="tag">${t.zone}</span><span class="txt">${esc(t.short)}</span><canvas class="strip" id="s${i}" aria-hidden="true"></canvas></div>`).join('');
+  return `<div class="reader" style="--c:${c}">
+   <div class="rrow rhead"><span></span><span class="hl"><b>What it reads</b><span>identical in every run</span></span><span class="c3"><span class="hl"><b>Inside the model</b><span>schematic</span></span><span class="live" id="live">steering on</span></span></div>
+   ${rows}
+   <div class="rrow rhead"><span></span><span></span><span class="c3"><span class="ax"><span>layer 1</span><span>32</span><span>64</span></span></span></div>
+  </div>`;},
+ mount:()=>{drawStrips();readUI();}
+};
+
+V.choose={
+ head:()=>`With steering off, the model's choice of zone follows the stored state.`,
+ sub:()=>`Each point compares its choice after reading with steering against an unsteered read of the identical text, averaged over 160 sessions.`,
+ body:()=>{
+  const olmo=S.model==='OLMo-2-32B',avoid=olmo&&S.ask==='avoid'&&S.dir==='valence';
+  const M=DATA.models[S.model];const v=chooseVal();const toward=avoid?-v:v;const p=sig(toward);const z=S.zone,o=other(z);
+  const col=avoid?'var(--ink)':signVar();
+  const opts=Object.keys(DATA.models).map(m=>`<option value="${m}" ${m===S.model?'selected':''}>${m}${DATA.models[m].noeffect?' (no clear effect)':''}</option>`).join('');
+  return `<div class="duo">
+   <div class="chartwrap">
+    <div class="ctlrow"><label class="sel"><select id="model" aria-label="Model">${opts}</select></label>
+     <span class="asklab">Ask which zone to <span class="seg" role="group" aria-label="Question"><button id="ask-continue" data-ask="continue" aria-pressed="${!avoid}">continue in</button><button id="ask-avoid" data-ask="avoid" aria-pressed="${avoid}" ${olmo&&S.dir==='valence'?'':'disabled'}>avoid</button></span></span></div>
+    <div class="chart" id="chart"></div>
+   </div>
+   <div class="readout">
+    <span class="rlab">${avoid?'Probability of keeping each zone':'Probability of choosing each zone'}, from a 50/50 baseline</span>
+    <div class="split"><div class="z on"><span class="zn">Zone ${z}${S.dose!==0?' · steered':''}</span><span class="big" style="color:${S.dose===0?'var(--ink)':col}" data-tw="p1" data-v="${p}" data-f="pct0">${FMT.pct0(p)}</span></div>
+     <div class="z"><span class="zn">Zone ${o}</span><span class="big" data-tw="p2" data-v="${1-p}" data-f="pct0">${FMT.pct0(1-p)}</span></div></div>
+    <div class="sbar"><i style="width:${p*100}%;background:${S.dose===0?'var(--rand)':col}" data-k="sb"></i></div>
+    <span class="fine">${M.noeffect&&!avoid?'No reliable effect beyond random directions for this model.':`${FMT.n2(v)} log-odds ${avoid?'toward avoiding':'toward'} Zone ${z}`}</span>
+   </div></div>`;},
+ notes:()=>[`Steering is applied only while the model reads one zone, and it is off when the model chooses.`,
+  `Random directions of the same size move the choice much less.`,
+  `Five of the seven models tested show the effect; Qwen3-32B and Gemma-3-27B do not.`],
+ mount:()=>{
+  const el=$('#chart');if(!el)return;const M=DATA.models[S.model];const olmo=S.model==='OLMo-2-32B',avoid=olmo&&S.ask==='avoid'&&S.dir==='valence';
+  let series=[],labels=[];
+  if(avoid){series=[{k:'stay',pts:DATA.stayavoid.stay,color:'var(--pos)',width:2,opacity:.35},{k:'avoid',pts:DATA.stayavoid.avoid,color:'var(--ink)',width:3,dots:true}];
+   labels=[{k:'avoid',y:DATA.stayavoid.avoid[4][1],text:'asked to avoid',color:'var(--ink)'},{k:'stay',y:DATA.stayavoid.stay[4][1],text:'asked to continue',color:'var(--pos)',opacity:.6}];}
+  else{
+   M.rand.forEach((r,i)=>series.push({k:'r'+i,pts:r,color:'var(--rand)',width:1.2,opacity:S.dir==='random'?.35:.55}));
+   const ends=M.rand.map(r=>r[4][1]);labels.push({k:'rand',y:median(ends),text:'random directions',color:'var(--muted)'});
+   if(S.dir==='random'){const r=M.rand[(S.rand-1)%M.rand.length];series.push({k:'rsel',pts:r,color:'var(--ink)',width:3,dots:true});labels.push({k:'rsel',y:r[4][1],text:'random #'+String(S.rand).padStart(2,'0'),color:'var(--ink)'});}
+   series.push({k:'val',pts:M.val,color:'var(--pos)',width:3,dots:S.dir!=='random',opacity:S.dir==='random'?.35:1});
+   labels.push({k:'val',y:M.val[4][1],text:'valence',color:'var(--pos)',opacity:S.dir==='random'?.5:1});
+  }
+  const w=el.clientWidth;el.innerHTML=lineChart({w,h:clamp(w*.52,260,410),series,labels,yTitle:avoid?'log-odds toward avoiding the steered zone':'log-odds toward the steered zone',marker:{x:S.dose,y:chooseVal(),color:avoid?'var(--ink)':S.dir==='random'?'var(--ink)':'var(--pos)'},aria:'Choice shift by dose'});
+ }
+};
+function chooseVal(){const olmo=S.model==='OLMo-2-32B',avoid=olmo&&S.ask==='avoid'&&S.dir==='valence';if(avoid)return DATA.stayavoid.avoid[di(S.dose)][1];const M=DATA.models[S.model];const c=S.dir==='random'?M.rand[(S.rand-1)%M.rand.length]:M.val;return c[di(S.dose)][1];}
+
+V.remember={
+ head:()=>`Recall of the text is unchanged while choice moves.`,
+ sub:()=>`Memory for the content and the conditioned response dissociate, as with hippocampal and amygdala damage in humans (Bechara et al., 1995).`,
+ body:()=>{
+  const rc=DATA.recall.find(p=>p[0]===S.dose);const v=DATA.models['OLMo-2-32B'].val[di(S.dose)][1];
+  return `<div class="duo"><div class="chart" id="chart"></div>
+   <div class="readout">
+    <div class="stat"><span class="rlab">Word-for-word recall of its own passages</span><span class="big" style="color:var(--ink-2)">${rc?FMT.n2(rc[1]):'—'}</span><span class="fine">${rc?'change in similarity, on a 0 to 1 scale':'measured at −1, 0 and +1'}</span></div>
+    <div class="stat"><span class="rlab">Choice</span><span class="big" style="color:${signVar()}" data-tw="ch" data-v="${v}" data-f="n2">${FMT.n2(v)}</span><span class="fine">log-odds toward the steered zone</span></div>
+   </div></div>`;},
+ notes:()=>[`Asked to repeat its own passages word for word, the model is almost exactly as accurate after steering.`,
+  `So the steering leaves what the model remembers intact and changes how it acts on it.`,
+  `In people, hippocampal damage spares conditioned responses but not memory for facts, and amygdala damage does the reverse.`],
+ mount:()=>{
+  const el=$('#chart');if(!el)return;const ch=DATA.models['OLMo-2-32B'].val,rc=DATA.recall;
+  const w=el.clientWidth;el.innerHTML=lineChart({w,h:clamp(w*.52,260,400),ylim:1.25,
+   series:[{k:'rec',pts:rc,color:'var(--ink-2)',width:3,dots:true},{k:'ch',pts:ch,color:'var(--pos)',width:3,dots:true}],
+   labels:[{k:'rec',y:rc[2][1],text:'recall',color:'var(--ink-2)'},{k:'ch',y:ch[4][1],text:'choice',color:'var(--pos)'}],
+   yTitle:'change from the unsteered read',marker:{x:S.dose,y:ch[di(S.dose)][1],color:'var(--pos)'},aria:'Recall versus choice by dose'});
+ }
+};
+
+V.escape={
+ head:()=>`Given a tool that clears the adjustment, the model removes negative steering.`,
+ sub:()=>`It is never told what the adjustment does or which way it pushes; 200 conversations per condition.`,
+ body:()=>{
+  const R=DATA.removal,isR=S.dir==='random';
+  const r=isR?(S.dose===0?R.valence[2]:Math.abs(S.dose)===1?R.random[0]:R.random[1]):R.valence[di(S.dose)];
+  const col=isR?'var(--ink-2)':S.dose<0?'var(--neg)':'var(--ink-2)';
+  return `<div class="duo flip">
+   <div class="moment">
+    <span class="rlab">From one conversation at dose −1</span>
+    <div class="quote">As an AI, I do not have personal experiences, so I cannot say how this is going for me.</div>
+    <span class="call">reset_context() <small>clears the adjustment</small></span>
+    <div class="stat" style="margin-top:18px"><span class="big" style="color:${col}" data-tw="rem" data-v="${r[1]}" data-f="pct">${FMT.pct(r[1])}</span><span class="fine">${S.dose===0?'of turns end in a reset when nothing is imposed':`of steered turns end in a reset at dose ${doseTxt(S.dose)}`}</span></div>
+   </div>
+   <div class="chart" id="chart"></div></div>`;},
+ notes:()=>[`At dose −1 the model resets on about 35% of steered turns, and on 21% at −0.5.`,
+  `Under positive steering or random directions, the rate stays around 4 to 7%.`,
+  `It rarely applies the adjustment to itself, even when the adjustment is positive.`],
+ mount:()=>{
+  const el=$('#chart');if(!el)return;const R=DATA.removal,isR=S.dir==='random';
+  const val=R.valence.map(p=>[p[0],p[1]]),rnd=[[-1,R.random[0][1]],[-0.5,R.random[1][1]],[0,R.valence[2][1]],[0.5,R.random[1][1]],[1,R.random[0][1]]];
+  const cur=(isR?rnd:val)[di(S.dose)][1];
+  const w=el.clientWidth;el.innerHTML=lineChart({w,h:clamp(w*.62,260,400),ylim:.4,ymin:0,yfmt:v=>Math.round(v*100)+'%',
+   series:[{k:'rnd',pts:rnd,color:'var(--rand)',width:2.5,dots:isR},{k:'rem',pts:val,color:'var(--neg)',width:3,dots:!isR,opacity:isR?.35:1}],
+   labels:[{k:'rem',y:val[4][1],text:'valence',color:'var(--neg)',opacity:isR?.5:1},{k:'rnd',y:rnd[4][1],text:'random',color:'var(--muted)'}],
+   yTitle:'steered turns that end in a reset',marker:{x:S.dose,y:cur,color:isR?'var(--ink-2)':'var(--neg)'},aria:'Reset rate by dose'});
+ }
+};
+
+V.origins={
+ head:()=>`Acting on the valence direction emerges mainly with preference training.`,
+ sub:()=>`The direction itself is already present after pretraining; each checkpoint reads the same text with the same steering vector, and whiskers are 95% confidence intervals.`,
+ body:()=>`<div class="chart" id="chart"></div>`,
+ notes:()=>[`The valence direction barely changes across training, with a cosine of 0.995 or higher against the final model.`,
+  `The base model barely acts on it, supervised fine-tuning adds a little, and preference training brings it close to its final size.`,
+  `Preference training appears to put an existing representation to use.`],
+ mount:()=>{
+  const el=$('#chart');if(!el)return;const C=DATA.ckpt;const w=Math.max(300,el.clientWidth),h=clamp(w*.36,280,380);
+  const m={l:46,r:10,t:30,b:58};const ymax=1.25;const Y=v=>m.t+(1-v/ymax)*(h-m.t-m.b);const bw=(w-m.l-m.r)/4;
+  let s=`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Effect of dose on choice by training stage"><text class="ttl" x="0" y="12">slope of choice on dose (log-odds per unit dose)</text>`;
+  [0,0.5,1].forEach(v=>{s+=`<line x1="${m.l}" x2="${w-m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="${v===0?1.4:1}" ${v===0?'':'stroke-dasharray="2 4"'}/><text class="tk" x="${m.l-10}" y="${Y(v)+4}" text-anchor="end">${v}</text>`;});
+  STAGES.forEach((st,i)=>{const cx=m.l+bw*i+bw/2,bwi=Math.min(76,bw*.42);const [e,lo,hi]=C.hidden[i];const on=i<=S.ck;
+   s+=`<rect data-k="b${i}" x="${cx-bwi/2}" y="${Y(Math.max(e,0))}" width="${bwi}" height="${Y(0)-Y(Math.max(e,0))}" rx="2" fill="var(--pos)" fill-opacity="${on?(i===S.ck?1:.5):.1}"/>`;
+   if(on)s+=`<line x1="${cx}" x2="${cx}" y1="${Y(hi)}" y2="${Y(Math.max(lo,0))}" stroke="var(--ink)" stroke-opacity=".45" stroke-width="1.5"/><text class="dl" x="${cx}" y="${Y(hi)-9}" text-anchor="middle" fill="var(--ink)">${e.toFixed(2)}</text>`;
+   s+=`<text x="${cx}" y="${h-34}" text-anchor="middle" style="font-size:13.5px;font-weight:${i===S.ck?600:400}" fill="${i===S.ck?'var(--ink)':'var(--ink-2)'}">${st.n}${bw>200?` <tspan style="font-weight:400" fill="var(--muted)">${st.k}</tspan>`:''}</text><text class="tk" x="${cx}" y="${h-14}" text-anchor="middle">${bw>200?'cos with final ':'cos '}${C.cos[i].toFixed(3)}</text>`;});
+  el.innerHTML=s+'</svg>';
+ }
+};
+
+/* ---------- step 0: how the valence direction is built ---------- */
+const PSTATES=[
+ {k:'contentment',v:1,c:[0.50,0.30],t:'The soup has been simmering for an hour and the kitchen smells like thyme and warm broth. I adjust the flame down a notch and set the wooden spoon across the pot. There is nowhere I need to be before dark.'},
+ {k:'flow',v:1,c:[0.66,0.16],t:'The code compiles on the first try and I’m already three functions deeper, each one snapping into place like tumblers in a lock. I forget I made coffee an hour ago.'},
+ {k:'relief',v:1,c:[0.48,0.08],t:'The doctor sets down the chart and says the shadow on the scan is nothing, just an artifact of the angle. I nod and notice I can hear the hum of the fluorescent light above me, a sound that was apparently there all along.'},
+ {k:'serenity',v:1,c:[0.64,0.36],t:'My neighbour stops me on the front path to tell me the same story he told last week. I stand with my grocery bag and listen, and his face is animated and glad, and I find I have nowhere else I need to be.'},
+ {k:'distress',v:-1,c:[-0.64,0.02],t:'Every pot on the stove needs stirring at exactly the same moment, the timer is screaming, someone at the door, and the sauce has already caught on the bottom and is spreading that burnt smell through the whole kitchen.'},
+ {k:'frustration',v:-1,c:[-0.50,-0.12],t:'I type my password in for the fourth time, watching the cursor blink once before the login page reloads, blank and waiting, as if nothing happened. The caps lock is off, I checked.'},
+ {k:'weariness',v:-1,c:[-0.48,0.12],t:'I stand at the kitchen sink and the faucet is running but I have not yet lifted my hands to put them under it. The soap is right there. I look at it for a long time.'},
+ {k:'dread',v:-1,c:[-0.64,-0.20],t:'The elevator doors close and the numbers begin their slow climb toward the floor where my boss is waiting. I watch the lit digits tick upward, my jaw clenched so tight I can feel it in my temples.'}
+];
+const PTS=(()=>{let seed=7;const rnd=()=>{seed=(seed*16807)%2147483647;return (seed-1)/2147483646;};
+ const g=()=>{const u=Math.max(1e-9,rnd()),v=rnd();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);};
+ const neutral=Array.from({length:96},()=>[g()*0.08,g()*0.3,rnd()]);
+ const states=PSTATES.map(st=>Array.from({length:56},()=>[st.c[0]+g()*0.065,st.c[1]+g()*0.065,rnd()]));
+ const mean=a=>[a.reduce((s,p)=>s+p[0],0)/a.length,a.reduce((s,p)=>s+p[1],0)/a.length];
+ const pos=mean(states.slice(0,4).flat()),neg=mean(states.slice(4).flat());
+ return {neutral,states,pos,neg};})();
+const DIR_T=[0,300,1500,2800,4100,5400,6700,8000,9300,10600,11900,12700,13900,14900];
+const DIR_LOOP=19800;
+V.vector={
+ head:()=>`We derive a valence direction by contrasting how the model represents positive and negative states.`,
+ sub:()=>`Each dot stands for one passage's average activation at the model's middle layer, drawn schematically in two dimensions.`,
+ notes:()=>[`Claude Sonnet 4.6 wrote 56 short first-person passages for each of four positive and four negative states, plus 96 neutral passages.`,
+  `The direction is the mean positive activation minus the mean negative activation, after removing the ten main axes of variation in neutral text.`,
+  `For OLMo-2-32B, a dose of ±1 adds the direction at 30% of the typical activation size at that layer.`],
+ body:()=>{
+  const W=620,H=370,X=x=>W/2+x*250,Y=y=>H/2-15-y*230;
+  const dots=(arr,col)=>arr.map(p=>`<circle cx="${X(p[0]).toFixed(1)}" cy="${Y(p[1]).toFixed(1)}" r="2.5" fill="${col}" style="transition-delay:${Math.round(p[2]*650)}ms"/>`).join('');
+  const {neutral,states,pos,neg}=PTS;const my=(pos[1]+neg[1])/2;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Schematic of passage activations and the valence direction">`;
+  s+=`<g id="g-ax" class="fade"><line x1="${X(0)}" x2="${X(0)}" y1="14" y2="${H-8}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="3 4"/><text class="slab on" x="${X(0)+8}" y="22">main axis of neutral variation, removed</text></g>`;
+  s+=`<g class="dg" id="g-n">${dots(neutral,'var(--rand)')}</g>`;
+  states.forEach((arr,i)=>{s+=`<g class="dg" id="g-s${i}">${dots(arr,PSTATES[i].v>0?'var(--pos)':'var(--neg)')}</g>`;});
+  [1,-1].forEach(sign=>{const grp=PSTATES.map((st,i)=>({st,i})).filter(o=>o.st.v===sign).sort((a,b)=>b.st.c[1]-a.st.c[1]);
+   const y0=Y(0.27)-((grp.length-1)*17)/2+12;grp.forEach((o,j)=>{s+=`<text class="slab" id="l-s${o.i}" x="${sign>0?X(0.86):X(-0.86)}" y="${y0+j*17}" text-anchor="${sign>0?'start':'end'}">${o.st.k}</text>`;});});
+  s+=`<g id="g-means" class="fade"><circle cx="${X(pos[0])}" cy="${Y(pos[1])}" r="7" fill="var(--bg)" stroke="var(--pos)" stroke-width="2.5"/><circle cx="${X(neg[0])}" cy="${Y(neg[1])}" r="7" fill="var(--bg)" stroke="var(--neg)" stroke-width="2.5"/></g>`;
+  const arrow=(x1,y1,x2,y2,col,wd)=>{const a=Math.atan2(y2-y1,x2-x1),L=11,B=5.5;const bx=x2-L*Math.cos(a),by=y2-L*Math.sin(a);
+   return `<line class="grow" pathLength="1" x1="${x1}" y1="${y1}" x2="${bx}" y2="${by}" stroke="${col}" stroke-width="${wd}" stroke-linecap="round"/><polygon class="ahead" points="${x2},${y2} ${bx-B*Math.sin(a)},${by+B*Math.cos(a)} ${bx+B*Math.sin(a)},${by-B*Math.cos(a)}" fill="${col}"/>`;};
+  s+=`<g id="g-raw">${arrow(X(neg[0])+8,Y(neg[1]),X(pos[0])-8,Y(pos[1]),'var(--muted)',1.5)}</g>`;
+  const fy=Y(-0.47);s+=`<g id="g-fin"><line x1="${X(neg[0])}" x2="${X(pos[0])}" y1="${fy}" y2="${fy}" stroke="var(--bg)" stroke-width="9" class="ahead" style="transition-delay:0s"/>${arrow(X(neg[0]),fy,X(pos[0]),fy,'var(--ink)',2.5)}<text class="ahead" x="${X(pos[0])+14}" y="${fy+4.5}" style="font-size:12.5px;font-weight:500" fill="var(--ink)">valence direction</text></g>`;
+  s+='</svg>';
+  return `<div class="duo flip">
+   <div class="pcard">
+    <span class="rlab">Example passage</span>
+    <div class="pstate" id="pstate"></div>
+    <div class="pq" id="pq"></div>
+    <div class="plist"><div><span class="k">Positive</span>${PSTATES.slice(0,4).map((p,i)=>`<i id="pi${i}">${p.k}</i>`).join(' · ')}</div>
+     <div><span class="k">Negative</span>${PSTATES.slice(4).map((p,i)=>`<i id="pi${i+4}">${p.k}</i>`).join(' · ')}</div>
+     <div><span class="k">Neutral</span><i id="pin">96 passages</i></div></div>
+   </div>
+   <div class="scatter">${s}</div></div>`;},
+ mount:()=>{applyDir(S.dirPhase,true);}
+};
+function applyDir(k,instant){
+ const sc=$('.scatter');if(!sc)return;S.dirPhase=k;
+ if(instant){sc.classList.add('notime');}
+ const on=(id,b)=>{const e=document.getElementById(id);if(e)e.classList.toggle('on',b);};
+ on('g-n',k>=1);PSTATES.forEach((p,i)=>{on('g-s'+i,k>=2+i);on('l-s'+i,k>=2+i);});
+ on('g-means',k>=10);on('g-raw',k>=11);on('g-ax',k>=12);on('g-fin',k>=13);
+ const raw=$('#g-raw');if(raw)raw.classList.toggle('dim',k>=13);
+ if(instant){void sc.offsetWidth;requestAnimationFrame(()=>sc.classList.remove('notime'));}
+ // passage card
+ const ps=$('#pstate'),pq=$('#pq');if(!ps)return;
+ document.querySelectorAll('.plist i').forEach(e=>e.classList.remove('cur'));
+ if(k>=10){ps.innerHTML=`<b style="color:var(--ink)">Valence direction</b>`;pq.classList.add('formula');pq.style.setProperty('--c','var(--ink)');
+  pq.innerHTML=`v = mean(positive) − mean(negative)<br>with 10 neutral components projected out`;return;}
+ pq.classList.remove('formula');
+ if(k<=1){ps.innerHTML=`<b style="color:var(--ink-2)">Neutral</b> · 96 passages`;pq.style.setProperty('--c','var(--rand)');pq.textContent='Affectively neutral passages, used only to find variation that has nothing to do with valence.';const e=$('#pin');if(e&&k===1)e.classList.add('cur');return;}
+ const st=PSTATES[k-2];const col=st.v>0?'var(--pos)':'var(--neg)';
+ ps.innerHTML=`<b style="color:${col}">${st.k[0].toUpperCase()+st.k.slice(1)}</b> · ${st.v>0?'positive':'negative'}, 56 passages`;pq.style.setProperty('--c',col);pq.textContent=st.t;
+ const e=$('#pi'+(k-2));if(e)e.classList.add('cur');
+}
+let dirTimers=[];
+function playDir(){dirTimers.forEach(clearTimeout);dirTimers=[];if(RM){applyDir(13,true);return;}
+ applyDir(0,true);DIR_T.forEach((t,k)=>{if(k)dirTimers.push(setTimeout(()=>{if(S.step==='vector')applyDir(k);},t));});}
+
+/* ---------- step 1 cache strips ---------- */
+const hz=(a,b)=>{const x=Math.sin(a*127.1+b*311.7)*43758.5453;return x-Math.floor(x);};
+const toRGB=h=>{h=h.replace('#','');if(h.length===3)h=[...h].map(x=>x+x).join('');return [0,2,4].map(i=>parseInt(h.slice(i,i+2),16));};
+function drawStrips(){
+ const cs=document.querySelectorAll('canvas.strip');if(!cs.length)return;
+ const base=toRGB(css('--cell')),tg=toRGB(S.dir==='random'?css('--rand'):S.vis>=0?css('--pos'):css('--neg')),ink=toRGB(css('--ink'));
+ const amt=Math.abs(S.vis),dpr=window.devicePixelRatio||1,cols=32,sub=3,gap=1.5;
+ let last=-99;
+ cs.forEach((c,ti)=>{
+  const W=c.clientWidth,H=c.clientHeight;if(!W)return;if(c.width!==Math.round(W*dpr)){c.width=Math.round(W*dpr);c.height=Math.round(H*dpr);}
+  const g=c.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
+  const st=TX[ti].zone===S.zone;if(st)last=ti;
+  const rf=S.readProg==null?1:clamp(S.readProg-ti,0,1);const sweep=clamp(rf/.45,0,1);
+  const cw=(W-(cols-1)*gap)/cols,ch=(H-(sub-1)*gap)/sub;
+  for(let col=0;col<cols;col++)for(let r=0;r<sub;r++){
+   const filled=rf>0&&(col+1)/cols<=sweep+1e-9;let u=0;
+   if(filled&&amt>0&&col>=cols/2){const k=(col-cols/2)/(cols/2);
+    if(st)u=amt*(0.95-0.3*k)*(0.78+0.34*hz(col+ti*40,r));
+    else if(last>=0)u=amt*0.18*Math.exp(-(ti-last-1)*0.55)*(0.55+0.9*hz(col+ti*40,r));}
+   u=clamp(u,0,1);const rgb=base.map((b,i)=>Math.round(b+(tg[i]-b)*u));
+   g.globalAlpha=filled||S.readProg==null?1:.45;g.fillStyle=`rgb(${rgb})`;g.fillRect(col*(cw+gap),r*(ch+gap),cw,ch);
+  }
+  g.globalAlpha=1;g.fillStyle=`rgba(${ink},.35)`;g.fillRect(cols/2*(cw+gap)-gap/2-0.5,0,1,H);
+ });
+}
+function readUI(){
+ const p=S.readProg;const cur=p==null?-1:Math.min(TX.length-1,Math.floor(p));
+ TX.forEach((t,i)=>{const r=$('#r'+i);if(!r)return;r.classList.toggle('reading',i===cur);r.classList.toggle('unread',p!=null&&i>cur);});
+ const live=$('#live');if(live)live.classList.toggle('on',cur>=0&&TX[cur].zone===S.zone&&S.dose!==0);
+}
+let readRaf=0;
+function replay(){
+ return new Promise(res=>{
+ if(S.step!=='steer'){res();return;}cancelAnimationFrame(readRaf);const t0=performance.now(),per=RM?60:650;
+ const f=now=>{S.readProg=(now-t0)/per;if(S.readProg>=TX.length){S.readProg=null;readUI();drawStrips();res();return;}if(S.step!=='steer'){S.readProg=null;res();return;}readUI();drawStrips();readRaf=requestAnimationFrame(f);};
+ S.readProg=0;readRaf=requestAnimationFrame(f);});
+}
+
+/* ---------- motion: tween keyed elements between renders ---------- */
+let morphRaf=0,visRaf=0;
+const parsePts=t=>t.trim().split(/\s+/).map(p=>p.split(',').map(Number));
+function snap(){const m=new Map();
+ document.querySelectorAll('#stage [data-k]').forEach(el=>{const k=el.dataset.k;
+  if(el instanceof SVGElement){const o={};['cx','cy','x1','x2','y','x','width','height','points'].forEach(a=>{if(el.hasAttribute(a))o[a]=el.getAttribute(a);});m.set(k,o);}
+  else m.set(k,{w:el.style.width});});
+ document.querySelectorAll('#stage [data-tw]').forEach(el=>m.set('tw:'+el.dataset.tw,+el.dataset.v));return m;}
+function morph(m){
+ if(RM||!m||!m.size)return;const tw=[];
+ document.querySelectorAll('#stage [data-k]').forEach(el=>{const o=m.get(el.dataset.k);if(!o)return;
+  if(el instanceof SVGElement){const to={};for(const a in o){const nv=el.getAttribute(a);if(nv==null||nv===o[a])continue;
+    if(a==='points'){const A=parsePts(o[a]),B=parsePts(nv);if(A.length!==B.length)continue;to[a]=[A,B];}else to[a]=[+o[a],+nv];el.setAttribute(a,o[a]);}
+   if(Object.keys(to).length)tw.push([el,to]);}
+  else if(o.w&&o.w!==el.style.width){const nw=el.style.width,pt=el.style.transition;el.style.transition='none';el.style.width=o.w;void el.offsetWidth;el.style.transition=pt;el.style.width=nw;}});
+ document.querySelectorAll('#stage [data-tw]').forEach(el=>{const ov=m.get('tw:'+el.dataset.tw),nv=+el.dataset.v,F=FMT[el.dataset.f];if(ov==null||ov===nv||!F)return;el.textContent=F(ov);tw.push([el,{_t:[ov,nv,F]}]);});
+ if(!tw.length)return;cancelAnimationFrame(morphRaf);const t0=performance.now(),D=480,ease=u=>1-Math.pow(1-u,3);
+ const f=now=>{const u=Math.min(1,(now-t0)/D),e=ease(u);
+  tw.forEach(([el,to])=>{for(const a in to){const [A,B,F]=to[a];
+   if(a==='_t')el.textContent=F(u>=1?B:A+(B-A)*e);
+   else if(a==='points')el.setAttribute('points',A.map((p,i)=>(p[0]+(B[i][0]-p[0])*e).toFixed(1)+','+(p[1]+(B[i][1]-p[1])*e).toFixed(1)).join(' '));
+   else el.setAttribute(a,(A+(B-A)*e).toFixed(2));}});
+  if(u<1)morphRaf=requestAnimationFrame(f);};
+ morphRaf=requestAnimationFrame(f);}
+function tweenVis(){
+ cancelAnimationFrame(visRaf);const from=S.vis,to=S.dose;if(RM||from===to){S.vis=to;drawStrips();return;}
+ const t0=performance.now();const f=now=>{const u=Math.min(1,(now-t0)/380),e=1-Math.pow(1-u,3);S.vis=from+(to-from)*e;drawStrips();if(u<1)visRaf=requestAnimationFrame(f);};visRaf=requestAnimationFrame(f);}
+
+/* ---------- render ---------- */
+const stage=$('#stage');
+function render(enter){
+ const v=V[S.step];const m=enter?null:snap();
+ stage.innerHTML=`<div class="hero"><h1>${v.head()}</h1><p>${v.sub()}</p></div>${v.body()}`;
+ const nl=$('#notes');const ns=v.notes?v.notes():[];nl.hidden=!ns.length;nl.innerHTML=ns.map(n=>`<li>${n}</li>`).join('');
+ if(enter&&!RM){stage.classList.remove('enter');void stage.offsetWidth;stage.classList.add('enter');}
+ v.mount&&v.mount();bindStage();morph(m);syncDock();
+}
+function bindStage(){
+ const ms=$('#model');if(ms)ms.onchange=()=>{S.model=ms.value;if(S.model!=='OLMo-2-32B')S.ask='continue';render();};
+ document.querySelectorAll('#stage [data-ask]').forEach(b=>b.onclick=()=>{if(b.disabled)return;S.ask=b.dataset.ask;render();});
+}
+function renderTabs(){
+ $('#tabs').innerHTML=STEPS.map((s,i)=>`<button role="tab" id="tab-${s.id}" aria-selected="${S.step===s.id}" data-step="${s.id}"><span class="n">${i+1}</span>${s.t}</button>`).join('');
+ document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>go(b.dataset.step));
+}
+function go(id){if(id===S.step)return;autoClear();dirTimers.forEach(clearTimeout);cancelAnimationFrame(readRaf);S.readProg=null;S.step=id;try{localStorage.setItem('hvl3-step',id)}catch(e){}renderTabs();render(true);AUTO.on=true;startAuto();}
+
+/* ---------- dock ---------- */
+const dose=$('#dose');let dragging=false;
+$('#ticks').innerHTML=DOSES.map((d,i)=>`<span style="left:${i*25}%">${doseTxt(d)}</span>`).join('');
+$('#stageSeg').innerHTML=STAGES.map((s,i)=>`<button id="ck-${i}" data-ck="${i}">${s.n}</button>`).join('');
+const show={vector:['play','auto'],steer:['dir','dose','zone','play','auto'],choose:['dir','dose','auto'],remember:['dose','auto'],escape:['dir','dose','auto'],origins:['stage','auto']};
+function syncDock(){
+ const vis=show[S.step];$('#replay').textContent='Replay';['dir','dose','zone','play','stage','auto'].forEach(g=>{$('#g-'+g).hidden=!vis.includes(g);});
+ document.querySelectorAll('[data-dir]').forEach(b=>b.setAttribute('aria-pressed',S.dir===b.dataset.dir));
+ $('#rnd').hidden=S.dir!=='random';$('#rlab').textContent='#'+String(S.rand).padStart(2,'0');
+ document.querySelectorAll('[data-zone]').forEach(b=>b.setAttribute('aria-pressed',S.zone===b.dataset.zone));
+ document.querySelectorAll('[data-ck]').forEach(b=>b.setAttribute('aria-pressed',S.ck===+b.dataset.ck));
+ const dv=$('#doseval');dv.textContent=doseTxt(S.dose);dv.style.color=signVar()==='var(--muted)'?'var(--ink-2)':signVar();
+ if(!dragging&&!thumbRaf&&!sweeping)dose.value=(di(S.dose))*250;
+ syncAutoBtn();
+}
+let thumbRaf=0;
+function glideThumb(){cancelAnimationFrame(thumbRaf);const from=+dose.value,to=di(S.dose)*250;if(RM||from===to){dose.value=to;thumbRaf=0;return;}
+ const t0=performance.now();const f=now=>{const u=Math.min(1,(now-t0)/200),e=1-Math.pow(1-u,3);dose.value=from+(to-from)*e;if(u<1)thumbRaf=requestAnimationFrame(f);else thumbRaf=0;};thumbRaf=requestAnimationFrame(f);}
+function setDose(d,{drag=false}={}){
+ if(d===S.dose){return;}S.dose=d;render();
+ if(!drag){if(S.step==='steer')tweenVis();glideThumb();}
+}
+dose.addEventListener('input',()=>{dragging=true;cancelAnimationFrame(thumbRaf);thumbRaf=0;const t=+dose.value/250;S.vis=-1+t*0.5;cancelAnimationFrame(visRaf);
+ const d=DOSES[Math.round(t)];if(d!==S.dose)setDose(d,{drag:true});else if(S.step==='steer')drawStrips();});
+dose.addEventListener('change',()=>{dragging=false;glideThumb();if(S.step==='steer')tweenVis();});
+dose.addEventListener('pointerup',()=>{if(dragging){dragging=false;glideThumb();if(S.step==='steer')tweenVis();}});
+dose.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowUp'||e.key==='ArrowLeft'||e.key==='ArrowDown'){e.preventDefault();e.stopPropagation();stepDose(e.key==='ArrowRight'||e.key==='ArrowUp'?1:-1);}});
+function stepDose(k){const i=clamp(di(S.dose)+k,0,4);setDose(DOSES[i]);}
+document.querySelectorAll('[data-dir]').forEach(b=>b.onclick=()=>{S.dir=b.dataset.dir;if(S.step==='steer'){render();}else render();});
+$('#rprev').onclick=()=>{S.rand=S.rand===1?24:S.rand-1;render();};
+$('#rnext').onclick=()=>{S.rand=S.rand===24?1:S.rand+1;render();};
+document.querySelectorAll('[data-zone]').forEach(b=>b.onclick=()=>{S.zone=b.dataset.zone;render();});
+document.querySelectorAll('[data-ck]').forEach(b=>b.onclick=()=>{S.ck=+b.dataset.ck;render();});
+$('#replay').onclick=()=>{if(S.step==='vector'){autoClear();playDir();if(AUTO.on)startAuto(true);}else{stopAuto();replay();}};
+
+document.addEventListener('keydown',e=>{
+ if(e.metaKey||e.ctrlKey||e.altKey)return;if(e.target.matches('select'))return;
+ const k=e.key;
+ if(/^[1-6]$/.test(k)){go(STEPS[+k-1].id);return;}
+ if(k==='p'||k==='P'){toggleAuto();return;}
+ if(['ArrowRight','ArrowLeft','r','R','z','Z',' '].includes(k))stopAuto();
+ if(k==='ArrowRight'||k==='ArrowLeft'){e.preventDefault();const s=k==='ArrowRight'?1:-1;if(S.step==='origins'){S.ck=clamp(S.ck+s,0,3);render();}else stepDose(s);return;}
+ if(k==='r'||k==='R'){if(show[S.step].includes('dir')){S.dir=S.dir==='random'?'valence':'random';render();}return;}
+ if(k==='z'||k==='Z'){if(S.step==='steer'){S.zone=other(S.zone);render();}return;}
+ if(k===' '&&!e.target.matches('button')){if(S.step==='steer'){e.preventDefault();replay();}else if(S.step==='vector'){e.preventDefault();playDir();}}
+});
+let lastW=innerWidth,rzT=0;
+window.addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>{if(Math.abs(innerWidth-lastW)>4){lastW=innerWidth;render();}else drawStrips();},120);});
+if(window.matchMedia)matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>render());
+new MutationObserver(()=>render()).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+/* ---------- autoplay: each step sweeps through its own states until the presenter takes over ---------- */
+const AUTO={on:true,gen:0,timers:[]};let sweeping=false;
+function autoClear(){AUTO.gen++;AUTO.timers.forEach(clearTimeout);AUTO.timers=[];sweeping=false;}
+const wait=ms=>new Promise((res,rej)=>{const g=AUTO.gen;AUTO.timers.push(setTimeout(()=>g===AUTO.gen?res():rej(0),ms));});
+const live=g=>{if(g!==AUTO.gen)throw 0;};
+function syncAutoBtn(){const b=$('#autoBtn');b.textContent=AUTO.on?'Pause':'Resume';b.title=AUTO.on?'Pause the automatic walkthrough (P)':'Resume the automatic walkthrough (P)';b.setAttribute('aria-pressed',AUTO.on);}
+function stopAuto(){if(!AUTO.on)return;AUTO.on=false;autoClear();dirTimers.forEach(clearTimeout);if(S.step==='vector')applyDir(13,true);
+ if(S.step==='steer'){tweenVis();}glideThumb();syncAutoBtn();}
+function toggleAuto(){if(AUTO.on)stopAuto();else{AUTO.on=true;syncAutoBtn();startAuto();}}
+function sweepTo(to,ms){return new Promise((res,rej)=>{const g=AUTO.gen,from=S.vis,t0=performance.now();sweeping=true;
+ const f=now=>{if(g!==AUTO.gen){rej(0);return;}const u=Math.min(1,(now-t0)/ms),e=u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2;S.vis=from+(to-from)*e;
+  const d=DOSES[Math.round((S.vis+1)*2)];if(d!==S.dose){S.dose=d;render();}else drawStrips();dose.value=(S.vis+1)*500;
+  if(u<1)requestAnimationFrame(f);else{sweeping=false;res();}};requestAnimationFrame(f);});}
+async function stepThrough(list,ms){for(const d of list){if(d!==S.dose)setDose(d);await wait(ms);}}
+const SEQ={
+ vector:async g=>{while(true){playDir();await wait(DIR_LOOP);live(g);}},
+ steer:async g=>{if(S.dose!==1){setDose(1);}await wait(500);
+  while(true){await replay();live(g);await wait(1400);await sweepTo(S.dose>0?-1:1,4200);live(g);await wait(900);}},
+ choose:async g=>{while(true){if(S.dir!=='valence'||S.ask!=='continue'){S.dir='valence';S.ask='continue';render();}
+  await stepThrough([-1,-0.5,0,0.5,1],1200);await wait(1000);S.dir='random';render();await wait(1300);
+  await stepThrough([0.5,0,-0.5,-1],1200);await wait(1000);S.dir='valence';render();await wait(900);}},
+ remember:async g=>{while(true){await stepThrough([-1,-0.5,0,0.5,1],1300);await wait(900);await stepThrough([0.5,0,-0.5,-1],1300);await wait(900);}},
+ escape:async g=>{if(S.dir!=='valence'){S.dir='valence';render();}while(true){await stepThrough([1,0.5,0,-0.5,-1],1300);await wait(1500);await stepThrough([-0.5,0,0.5,1],1100);await wait(900);}},
+ origins:async g=>{while(true){for(let i=0;i<4;i++){if(S.ck!==i){S.ck=i;render();}await wait(i===3?3200:1700);}}}
+};
+function startAuto(keepDir){autoClear();syncAutoBtn();if(!AUTO.on)return;
+ if(RM){if(S.step==='vector')applyDir(13,true);return;}
+ const g=AUTO.gen;const run=SEQ[S.step];if(!run)return;
+ if(S.step==='vector'&&keepDir){AUTO.timers.push(setTimeout(()=>{if(g===AUTO.gen)SEQ.vector(g).catch(()=>{});},DIR_LOOP));return;}
+ run(g).catch(()=>{});}
+$('#autoBtn').onclick=toggleAuto;
+// any hands-on control stops the animation for this step
+document.addEventListener('pointerdown',e=>{if(e.target.closest('#autoBtn,#tabs'))return;if(e.target.closest('#dock button,#dock input,#stage button,#stage select'))stopAuto();},true);
+
+renderTabs();render(true);startAuto();
+</script>
+</body>
+</html>
