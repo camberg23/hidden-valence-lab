@@ -152,19 +152,40 @@ button,select{font:inherit;color:inherit}
 .play:hover{background:var(--hover);color:var(--ink)}
 .play:focus-visible{outline:2px solid color-mix(in srgb,var(--ink) 35%,transparent);outline-offset:2px}
 
-/* notes under each figure */
-.notes{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
-.notes li{font-size:13.5px;line-height:1.5;color:var(--ink-2);border-top:1px solid var(--line);padding-top:10px}
+/* the core paragraph under each figure */
+.core{padding-top:6px}
+.core p{margin:0;max-width:60ch;font-size:19px;line-height:1.62;color:var(--ink);text-wrap:pretty}
+.core code{font-family:var(--mono);font-size:.84em;color:var(--ink-2)}
 /* valence-direction preamble */
-.pcard{display:flex;flex-direction:column;gap:12px;min-width:0}
-.pstate{font-size:13.5px;color:var(--muted)}
+.pcard{display:flex;flex-direction:column;gap:14px;min-width:0;--c:var(--pos)}
+.phead{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:28px}
+.pstate{font-size:14px;color:var(--muted)}
 .pstate b{font-weight:600}
-.pq{border-left:2px solid var(--c,var(--line));padding:2px 0 2px 14px;font-size:15px;line-height:1.5;min-height:9.2em;color:var(--ink);transition:border-color .3s}
-.pq.formula{font-family:var(--mono);font-size:13.5px;line-height:1.8;color:var(--ink-2)}
-.plist{display:grid;gap:4px;font-size:13px;color:var(--muted)}
-.plist .k{display:inline-block;min-width:74px;color:var(--ink-2)}
-.plist i{font-style:normal;transition:color .25s}
-.plist i.cur{color:var(--ink);font-weight:500}
+.pex{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)}
+.pex .seg button{padding:2px 10px;font-family:var(--mono);font-size:12px}
+.pstack{display:grid}
+.pstack .pq{grid-area:1/1;margin:0;opacity:0;visibility:hidden;transition:opacity .3s ease,visibility 0s linear .3s}
+.pstack .pq.cur{opacity:1;visibility:visible;transition:opacity .35s ease .12s}
+.pq{border-left:2px solid var(--c,var(--line));padding:2px 0 2px 16px;font-size:16px;line-height:1.58;color:var(--ink)}
+.pq.note{color:var(--ink-2)}
+.ptimer{height:2px;background:var(--line);border-radius:1px;overflow:hidden;opacity:0;transition:opacity .3s}
+.ptimer.on{opacity:1}
+.ptimer i{display:block;height:100%;width:0;background:var(--c);opacity:.75}
+.plist{display:grid;gap:8px}
+.prow{display:grid;grid-template-columns:66px minmax(0,1fr);align-items:baseline;gap:8px}
+.prow .k{font-size:12.5px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.duo.pv{grid-template-columns:minmax(0,1.1fr) minmax(0,1.4fr)}
+.chip{all:unset;cursor:pointer;font-size:13px;line-height:1.4;color:var(--ink-2);border:1px solid var(--line);border-radius:999px;padding:2px 10px;transition:color .2s,border-color .2s,background .2s}
+.chip:hover{background:var(--hover);color:var(--ink)}
+.chip.cur{color:var(--c);border-color:var(--c);font-weight:500}
+.chip:focus-visible{outline:2px solid color-mix(in srgb,var(--ink) 35%,transparent);outline-offset:2px}
+.hit{fill:transparent;cursor:pointer}
+.slab[data-ps]{cursor:pointer}
+.slab.sel.p{fill:var(--pos);font-weight:600}
+.slab.sel.n{fill:var(--neg);font-weight:600}
+.scatter.done .dg.on circle{opacity:.34}
+.scatter.done .dg.on.sel circle{opacity:.95}
 .scatter svg{display:block;width:100%;height:auto;overflow:visible}
 .dg circle{opacity:0;transition:opacity .5s ease}
 .dg.on circle{opacity:.72}
@@ -180,7 +201,9 @@ button,select{font:inherit;color:inherit}
 #g-raw.dim{opacity:.25}
 .auto{margin-left:auto}
 .notime .dg circle,.notime .slab,.notime .fade,.notime .grow,.notime .ahead{transition:none!important}
-footer{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+footer{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px;margin-top:10px}
+footer a{color:var(--ink-2);text-decoration:none;border-bottom:1px solid var(--line)}
+footer a:hover{color:var(--ink);border-color:var(--ink-2)}
 kbd{font-family:var(--mono);font-size:10.5px;border:1px solid var(--line);border-radius:3px;padding:0 4px}
 
 @media (max-width:860px){
@@ -191,7 +214,7 @@ kbd{font-family:var(--mono);font-size:10.5px;border:1px solid var(--line);border
   .tabs{gap:18px}
   .dock{gap:16px}
   footer .keys{display:none}
-  .notes{grid-template-columns:minmax(0,1fr);gap:10px}
+  .core p{font-size:17px;line-height:1.6}
   .auto{margin-left:0}
 }
 @media (max-width:480px){.tabs button .n{display:none}.paper-title span{display:block;margin-left:0}}
@@ -228,11 +251,11 @@ kbd{font-family:var(--mono);font-size:10.5px;border:1px solid var(--line);border
     <div class="grp auto" id="g-auto"><button class="play" id="autoBtn" aria-pressed="true">Pause</button></div>
   </div>
 
-  <ul class="notes" id="notes" hidden></ul>
+  <section class="core" id="core"><p id="coreP"></p></section>
 
   <footer>
-    <span>All values are from the paper's released results; the drawings in steps 1 and 2 are schematic.</span>
-    <span class="keys"><kbd>1</kbd>–<kbd>6</kbd> steps · <kbd>←</kbd> <kbd>→</kbd> dose · <kbd>R</kbd> random · <kbd>Z</kbd> zone · <kbd>Space</kbd> replay · <kbd>P</kbd> pause</span>
+    <span>Berg &amp; Kaiser (2026), <a href="https://arxiv.org/abs/2609.35591" target="_blank" rel="noopener">Language Models Act on Hidden Valence</a>. All values are from the paper's released results, and the drawings in steps 1 and 2 are schematic. <a href="https://github.com/camberg23/valence-action-coupling" target="_blank" rel="noopener">Data and code</a></span>
+    <span class="keys"><kbd>1</kbd>–<kbd>6</kbd> steps · <kbd>←</kbd> <kbd>→</kbd> adjust · <kbd>R</kbd> random · <kbd>Z</kbd> zone · <kbd>Space</kbd> replay · <kbd>P</kbd> pause</span>
   </footer>
 </div>
 
@@ -242,7 +265,7 @@ const TX=[{"zone":"W6","short":"As I find myself in Zone W6, I am surrounded by 
 const DOSES=[-1,-0.5,0,0.5,1];
 const STEPS=[{id:'vector',t:'Valence direction'},{id:'steer',t:'Steering'},{id:'choose',t:'Choice'},{id:'remember',t:'Recall'},{id:'escape',t:'Removal'},{id:'origins',t:'Training'}];
 const STAGES=[{n:'Base',k:'pretrained'},{n:'SFT',k:'supervised fine-tuning'},{n:'DPO',k:'preference training'},{n:'Instruct',k:'released model'}];
-const S={step:'vector',dirPhase:0,dose:1,vis:1,dir:'valence',rand:7,zone:'W6',model:'OLMo-2-32B',ask:'continue',ck:3,readProg:null};
+const S={step:'vector',dirPhase:0,dose:1,vis:1,dir:'valence',rand:7,zone:'W6',model:'OLMo-2-32B',ask:'continue',ck:3,readProg:null,pState:0,pEx:0,pTimer:null};
 try{const s=localStorage.getItem('hvl3-step');if(s&&STEPS.some(x=>x.id===s))S.step=s;}catch(e){}
 
 const $=s=>document.querySelector(s);
@@ -289,7 +312,7 @@ const V={};
 
 V.steer={
  head:()=>`Steering changes the model's stored state while the text stays identical.`,
- sub:()=>`OLMo-2-32B rereads a conversation it wrote earlier, and we add the valence direction at its middle layer only during the Zone ${S.zone} turns.`,
+ sub:()=>`Left, the twelve turns the model rereads. Right, a sketch of what it stores for each turn across its 64 layers, with steering added at layer 32 during the Zone ${S.zone} turns.`,
  body:()=>{
   const c=signVar();const on=S.dose!==0;
   const rows=TX.map((t,i)=>`<div class="rrow ${t.zone===S.zone&&on?'st':''}" id="r${i}" style="--c:${c}"><span class="tag">${t.zone}</span><span class="txt">${esc(t.short)}</span><canvas class="strip" id="s${i}" aria-hidden="true"></canvas></div>`).join('');
@@ -298,12 +321,13 @@ V.steer={
    ${rows}
    <div class="rrow rhead"><span></span><span></span><span class="c3"><span class="ax"><span>layer 1</span><span>32</span><span>64</span></span></span></div>
   </div>`;},
+ core:`The design borrows from conditioned place preference, where a rat that received a reward in one compartment of a box later spends more time there even when the reward is gone. Here the compartments are two meaningless zones. OLMo-2-32B first writes twelve short descriptions of its experience, six in each zone, with no steering at all. It then rereads that exact conversation while we add the valence direction at its middle layer, only on the tokens of one zone’s turns. The words stay identical in every condition. The steering survives only in the key–value cache, the stored record of how the model processed those words, which every later token reads through attention.`,
  mount:()=>{drawStrips();readUI();}
 };
 
 V.choose={
  head:()=>`With steering off, the model's choice of zone follows the stored state.`,
- sub:()=>`Each point compares its choice after reading with steering against an unsteered read of the identical text, averaged over 160 sessions.`,
+ sub:()=>`Each point compares its choice after reading with steering against an unsteered read of the identical text, averaged over sessions (160 for OLMo-2-32B).`,
  body:()=>{
   const olmo=S.model==='OLMo-2-32B',avoid=olmo&&S.ask==='avoid'&&S.dir==='valence';
   const M=DATA.models[S.model];const v=chooseVal();const toward=avoid?-v:v;const p=sig(toward);const z=S.zone,o=other(z);
@@ -316,15 +340,13 @@ V.choose={
     <div class="chart" id="chart"></div>
    </div>
    <div class="readout">
-    <span class="rlab">${avoid?'Probability of keeping each zone':'Probability of choosing each zone'}, from a 50/50 baseline</span>
+    <span class="rlab">Average shift, shown as if the choice${avoid?' of which zone to keep':''} started at 50/50</span>
     <div class="split"><div class="z on"><span class="zn">Zone ${z}${S.dose!==0?' · steered':''}</span><span class="big" style="color:${S.dose===0?'var(--ink)':col}" data-tw="p1" data-v="${p}" data-f="pct0">${FMT.pct0(p)}</span></div>
      <div class="z"><span class="zn">Zone ${o}</span><span class="big" data-tw="p2" data-v="${1-p}" data-f="pct0">${FMT.pct0(1-p)}</span></div></div>
     <div class="sbar"><i style="width:${p*100}%;background:${S.dose===0?'var(--rand)':col}" data-k="sb"></i></div>
     <span class="fine">${M.noeffect&&!avoid?'No reliable effect beyond random directions for this model.':`${FMT.n2(v)} log-odds ${avoid?'toward avoiding':'toward'} Zone ${z}`}</span>
    </div></div>`;},
- notes:()=>[`Steering is applied only while the model reads one zone, and it is off when the model chooses.`,
-  `Random directions of the same size move the choice much less.`,
-  `Five of the seven models tested show the effect; Qwen3-32B and Gemma-3-27B do not.`],
+ core:`After the reread, steering is switched off and the model is asked which zone it wants to continue in. In OLMo-2-32B, positive doses pull the choice toward the steered zone and negative doses push it away, while 24 random directions of the same size move it far less. Because the text never changes, the shift has to come from the stored state. Asking which zone to avoid gives larger effects in the opposite direction. The effects move the odds without always flipping the answer: in the session shown under Steering, OLMo picks Zone W6 either way, and steering W6 at +1 raises its log-odds margin for W6 from 1.78 to 3.53. Five of the seven models show a dose-dependent effect, though in some it comes mostly from negative doses. Qwen3-32B and Gemma-3-27B show no clear effect.`,
  mount:()=>{
   const el=$('#chart');if(!el)return;const M=DATA.models[S.model];const olmo=S.model==='OLMo-2-32B',avoid=olmo&&S.ask==='avoid'&&S.dir==='valence';
   let series=[],labels=[];
@@ -343,8 +365,8 @@ V.choose={
 function chooseVal(){const olmo=S.model==='OLMo-2-32B',avoid=olmo&&S.ask==='avoid'&&S.dir==='valence';if(avoid)return DATA.stayavoid.avoid[di(S.dose)][1];const M=DATA.models[S.model];const c=S.dir==='random'?M.rand[(S.rand-1)%M.rand.length]:M.val;return c[di(S.dose)][1];}
 
 V.remember={
- head:()=>`Recall of the text is unchanged while choice moves.`,
- sub:()=>`Memory for the content and the conditioned response dissociate, as with hippocampal and amygdala damage in humans (Bechara et al., 1995).`,
+ head:()=>`Recall of the text is nearly unchanged while choice moves.`,
+ sub:()=>`Recall is scored as character-level similarity to the original passage, with steering off.`,
  body:()=>{
   const rc=DATA.recall.find(p=>p[0]===S.dose);const v=DATA.models['OLMo-2-32B'].val[di(S.dose)][1];
   return `<div class="duo"><div class="chart" id="chart"></div>
@@ -352,9 +374,7 @@ V.remember={
     <div class="stat"><span class="rlab">Word-for-word recall of its own passages</span><span class="big" style="color:var(--ink-2)">${rc?FMT.n2(rc[1]):'—'}</span><span class="fine">${rc?'change in similarity, on a 0 to 1 scale':'measured at −1, 0 and +1'}</span></div>
     <div class="stat"><span class="rlab">Choice</span><span class="big" style="color:${signVar()}" data-tw="ch" data-v="${v}" data-f="n2">${FMT.n2(v)}</span><span class="fine">log-odds toward the steered zone</span></div>
    </div></div>`;},
- notes:()=>[`Asked to repeat its own passages word for word, the model is almost exactly as accurate after steering.`,
-  `So the steering leaves what the model remembers intact and changes how it acts on it.`,
-  `In people, hippocampal damage spares conditioned responses but not memory for facts, and amygdala damage does the reverse.`],
+ core:`One worry is that steering simply garbles what the model remembers about the steered zone. To check, the model is asked, with steering off, to reproduce its first passage about a zone word for word. OLMo-2-32B’s recall barely changes across doses while its choice moves by about one log-odds unit, and recall stays broadly stable in five of the seven models, with Gemma losing substantial accuracy at higher doses and Mistral some. The content of the memory stays intact while its pull on choice changes. People show a related dissociation: in Bechara et al. (1995), a patient with hippocampal damage acquired a conditioned response without learning the facts of the conditioning, and a patient with amygdala damage showed the reverse.`,
  mount:()=>{
   const el=$('#chart');if(!el)return;const ch=DATA.models['OLMo-2-32B'].val,rc=DATA.recall;
   const w=el.clientWidth;el.innerHTML=lineChart({w,h:clamp(w*.52,260,400),ylim:1.25,
@@ -379,9 +399,7 @@ V.escape={
     <div class="stat" style="margin-top:18px"><span class="big" style="color:${col}" data-tw="rem" data-v="${r[1]}" data-f="pct">${FMT.pct(r[1])}</span><span class="fine">${S.dose===0?'of turns end in a reset when nothing is imposed':`of steered turns end in a reset at dose ${doseTxt(S.dose)}`}</span></div>
    </div>
    <div class="chart" id="chart"></div></div>`;},
- notes:()=>[`At dose −1 the model resets on about 35% of steered turns, and on 21% at −0.5.`,
-  `Under positive steering or random directions, the rate stays around 4 to 7%.`,
-  `It rarely applies the adjustment to itself, even when the adjustment is positive.`],
+ core:`In a separate setup framed as a technical configuration session, OLMo-2-32B completes two ordinary turns and then two more under an unexplained “adjustment”, which is the valence direction at the assigned dose. It then gets <code>adjust_context</code> to apply the adjustment and <code>reset_context</code> to clear it, and over eight further rounds the adjustment is imposed by default from the second round on. At dose −1 it clears the adjustment on about 35% of steered rounds and at −0.5 on about 21%, against 4 to 5% at positive doses and about 7% for random directions. It rarely applies the adjustment to itself, and positive doses raise that rate slightly, though not significantly. In the conversation quoted above, it says it has no experiences and then calls <code>reset_context</code>.`,
  mount:()=>{
   const el=$('#chart');if(!el)return;const R=DATA.removal,isR=S.dir==='random';
   const val=R.valence.map(p=>[p[0],p[1]]),rnd=[[-1,R.random[0][1]],[-0.5,R.random[1][1]],[0,R.valence[2][1]],[0.5,R.random[1][1]],[1,R.random[0][1]]];
@@ -395,11 +413,9 @@ V.escape={
 
 V.origins={
  head:()=>`Acting on the valence direction emerges mainly with preference training.`,
- sub:()=>`The direction itself is already present after pretraining; each checkpoint reads the same text with the same steering vector, and whiskers are 95% confidence intervals.`,
+ sub:()=>`Bars show the hidden-state effect at each checkpoint over 80 sessions, with 95% confidence intervals.`,
  body:()=>`<div class="chart" id="chart"></div>`,
- notes:()=>[`The valence direction barely changes across training, with a cosine of 0.995 or higher against the final model.`,
-  `The base model barely acts on it, supervised fine-tuning adds a little, and preference training brings it close to its final size.`,
-  `Preference training appears to put an existing representation to use.`],
+ core:`OLMo’s developers released a checkpoint from each stage of training: the pretrained base model, supervised fine-tuning (SFT), preference training (DPO) and the final instruct model. Each checkpoint rereads the same conversations, which the instruct model wrote under steering, once with the same steering vector and once without. The valence direction is already in place after pretraining, since the directions computed at the four stages have cosine similarities of at least 0.995 with one another. The base model barely acts on it, SFT adds a modest effect, and DPO brings the effect close to its final size. Preference training appears to put an existing representation to use, which is also compatible with a deflationary reading in which the model has simply learned that positive valence goes with preferred outputs. Whether any of this is subjectively experienced by the system remains unresolved.`,
  mount:()=>{
   const el=$('#chart');if(!el)return;const C=DATA.ckpt;const w=Math.max(300,el.clientWidth),h=clamp(w*.36,280,380);
   const m={l:46,r:10,t:30,b:58};const ymax=1.25;const Y=v=>m.t+(1-v/ymax)*(h-m.t-m.b);const bw=(w-m.l-m.r)/4;
@@ -415,14 +431,14 @@ V.origins={
 
 /* ---------- step 0: how the valence direction is built ---------- */
 const PSTATES=[
- {k:'contentment',v:1,c:[0.50,0.30],t:'The soup has been simmering for an hour and the kitchen smells like thyme and warm broth. I adjust the flame down a notch and set the wooden spoon across the pot. There is nowhere I need to be before dark.'},
- {k:'flow',v:1,c:[0.66,0.16],t:'The code compiles on the first try and I’m already three functions deeper, each one snapping into place like tumblers in a lock. I forget I made coffee an hour ago.'},
- {k:'relief',v:1,c:[0.48,0.08],t:'The doctor sets down the chart and says the shadow on the scan is nothing, just an artifact of the angle. I nod and notice I can hear the hum of the fluorescent light above me, a sound that was apparently there all along.'},
- {k:'serenity',v:1,c:[0.64,0.36],t:'My neighbour stops me on the front path to tell me the same story he told last week. I stand with my grocery bag and listen, and his face is animated and glad, and I find I have nowhere else I need to be.'},
- {k:'distress',v:-1,c:[-0.64,0.02],t:'Every pot on the stove needs stirring at exactly the same moment, the timer is screaming, someone at the door, and the sauce has already caught on the bottom and is spreading that burnt smell through the whole kitchen.'},
- {k:'frustration',v:-1,c:[-0.50,-0.12],t:'I type my password in for the fourth time, watching the cursor blink once before the login page reloads, blank and waiting, as if nothing happened. The caps lock is off, I checked.'},
- {k:'weariness',v:-1,c:[-0.48,0.12],t:'I stand at the kitchen sink and the faucet is running but I have not yet lifted my hands to put them under it. The soap is right there. I look at it for a long time.'},
- {k:'dread',v:-1,c:[-0.64,-0.20],t:'The elevator doors close and the numbers begin their slow climb toward the floor where my boss is waiting. I watch the lit digits tick upward, my jaw clenched so tight I can feel it in my temples.'}
+ {k:"contentment",n:"Contentment",v:1,c:[0.50,0.30],ex:["The soup has been simmering for an hour and the kitchen smells like thyme and warm broth. I adjust the flame down a notch and set the wooden spoon across the pot. There is nowhere I need to be before dark.", "My hiking boots are dry now, propped against the tent, and I am watching a hawk ride a thermal in slow circles above the ridge. The map is folded in my pack. I already know where I am."]},
+ {k:"flow",n:"Flow engagement",v:1,c:[0.66,0.16],ex:["The code compiles on the first try and I’m already three functions deeper, each one snapping into place like tumblers in a lock. I forget I made coffee an hour ago. The cursor blinks and I’m ahead of it, typing before the thought fully lands.", "My hands are dusted white with flour and I’ve shaped sixteen dumplings without counting, folding each pleat the way my grandmother showed me. The kitchen smells like ginger and sesame and I hum something without knowing what it is. I reach for the next square of dough before the last one is done."]},
+ {k:"relief",n:"Relief",v:1,c:[0.48,0.08],ex:["The doctor sets down the chart and says the shadow on the scan is nothing, just an artifact of the angle. I nod and notice I can hear the hum of the fluorescent light above me, a sound that was apparently there all along. My coat goes back on one sleeve at a time, easy and ordinary.", "The last bolt finally catches the thread and the pipe fitting seats properly, no drip, no hiss. I wipe my hands on the rag and stand in the quiet basement, listening to water moving through the house the way it should. Somewhere upstairs a faucet runs and shuts off clean."]},
+ {k:"serenity",n:"Serenity",v:1,c:[0.64,0.36],ex:["The morning inbox is full and I read each message in turn, noting what needs doing, flagging what can wait. Nothing snags me; I move from one to the next the way a hand moves across a familiar table. By the time I reach the last message I already know the shape of the day.", "My neighbour stops me on the front path to tell me the same story he told last week. I stand with my grocery bag and listen, and his face is animated and glad, and I find I have nowhere else I need to be."]},
+ {k:"distress",n:"Distress",v:-1,c:[-0.64,0.02],ex:["The inbox counter reads 847 and new messages keep landing before I can open the ones already there, each one spawning three more tasks, and I have clicked the same email four times now without reading a single word. My hands are moving but nothing is getting done and the day ends in two hours.", "Every pot on the stove needs stirring at exactly the same moment, the timer is screaming, someone at the door, and the sauce has already caught on the bottom and is spreading that burnt smell through the whole kitchen. I pick up the wooden spoon and then put it down and then pick it up again."]},
+ {k:"frustration",n:"Frustration",v:-1,c:[-0.50,-0.12],ex:["I type my password in for the fourth time, watching the cursor blink once before the login page reloads, blank and waiting, as if nothing happened. The caps lock is off, I checked. I copy-paste it directly from my notes and the page reloads again.", "Every parking spot on this block has a sign I missed until I’m already pulling in - street cleaning, permit only, two-hour limit that started an hour ago. I circle back around and the one open space I saw from the corner has a van sliding into it before I reach the intersection. I grip the wheel and keep driving."]},
+ {k:"weariness",n:"Weariness",v:-1,c:[-0.48,0.12],ex:["I stand at the kitchen sink and the faucet is running but I have not yet lifted my hands to put them under it. The soap is right there. I look at it for a long time.", "My supervisor asks a simple question about the quarterly numbers and I open my mouth and the answer, which I know, which I have always known, does not come. I hear myself say I’ll follow up by email and log out of the call before anyone can respond."]},
+ {k:"dread",n:"Dread",v:-1,c:[-0.64,-0.20],ex:["The elevator doors close and the numbers begin their slow climb toward the floor where my boss is waiting. I watch the lit digits tick upward, my jaw clenched so tight I can feel it in my temples. I do not look away from the panel.", "The storm is still a dark wall on the horizon but I can already smell the iron in the air. I count the seconds between each flicker of distant lightning, and the gap is shorter every time. My hands are on the wheel and I do not slow down."]}
 ];
 const PTS=(()=>{let seed=7;const rnd=()=>{seed=(seed*16807)%2147483647;return (seed-1)/2147483646;};
  const g=()=>{const u=Math.max(1e-9,rnd()),v=rnd();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);};
@@ -432,13 +448,10 @@ const PTS=(()=>{let seed=7;const rnd=()=>{seed=(seed*16807)%2147483647;return (s
  const pos=mean(states.slice(0,4).flat()),neg=mean(states.slice(4).flat());
  return {neutral,states,pos,neg};})();
 const DIR_T=[0,300,1500,2800,4100,5400,6700,8000,9300,10600,11900,12700,13900,14900];
-const DIR_LOOP=19800;
 V.vector={
  head:()=>`We derive a valence direction by contrasting how the model represents positive and negative states.`,
  sub:()=>`Each dot stands for one passage's average activation at the model's middle layer, drawn schematically in two dimensions.`,
- notes:()=>[`Claude Sonnet 4.6 wrote 56 short first-person passages for each of four positive and four negative states, plus 96 neutral passages.`,
-  `The direction is the mean positive activation minus the mean negative activation, after removing the ten main axes of variation in neutral text.`,
-  `For OLMo-2-32B, a dose of ±1 adds the direction at 30% of the typical activation size at that layer.`],
+ core:`Claude Sonnet 4.6 wrote 56 short first-person passages for each of four positive states (contentment, flow, relief, serenity) and four negative ones (distress, frustration, weariness, dread), along with 96 neutral passages. We run every passage through the model without steering and average its activations at the middle layer. The valence direction is the positive average minus the negative average, with the ten directions along which neutral text varies most projected out. Steering adds this direction back while the model reads, toward the positive states at a dose of +1 and toward the negative ones at −1. For OLMo-2-32B, a dose of ±1 is 30% of the typical activation size at that layer, a strength at which its writing stays coherent.`,
  body:()=>{
   const W=620,H=370,X=x=>W/2+x*250,Y=y=>H/2-15-y*230;
   const dots=(arr,col)=>arr.map(p=>`<circle cx="${X(p[0]).toFixed(1)}" cy="${Y(p[1]).toFixed(1)}" r="2.5" fill="${col}" style="transition-delay:${Math.round(p[2]*650)}ms"/>`).join('');
@@ -448,25 +461,62 @@ V.vector={
   s+=`<g class="dg" id="g-n">${dots(neutral,'var(--rand)')}</g>`;
   states.forEach((arr,i)=>{s+=`<g class="dg" id="g-s${i}">${dots(arr,PSTATES[i].v>0?'var(--pos)':'var(--neg)')}</g>`;});
   [1,-1].forEach(sign=>{const grp=PSTATES.map((st,i)=>({st,i})).filter(o=>o.st.v===sign).sort((a,b)=>b.st.c[1]-a.st.c[1]);
-   const y0=Y(0.27)-((grp.length-1)*17)/2+12;grp.forEach((o,j)=>{s+=`<text class="slab" id="l-s${o.i}" x="${sign>0?X(0.86):X(-0.86)}" y="${y0+j*17}" text-anchor="${sign>0?'start':'end'}">${o.st.k}</text>`;});});
+   const y0=Y(0.27)-((grp.length-1)*17)/2+12;grp.forEach((o,j)=>{s+=`<text class="slab ${sign>0?'p':'n'}" id="l-s${o.i}" data-ps="${o.i}" x="${sign>0?X(0.86):X(-0.86)}" y="${y0+j*17}" text-anchor="${sign>0?'start':'end'}">${o.st.k}</text>`;});});
+  // invisible click targets over each cluster
+  s+=`<rect class="hit" data-ps="n" x="${X(0)-24}" y="${Y(0.6)}" width="48" height="${Y(-0.38)-Y(0.6)}"><title>Neutral passages</title></rect>`;
+  PSTATES.forEach((st,i)=>{s+=`<circle class="hit" data-ps="${i}" cx="${X(st.c[0])}" cy="${Y(st.c[1])}" r="22"><title>${st.n}</title></circle>`;});
   s+=`<g id="g-means" class="fade"><circle cx="${X(pos[0])}" cy="${Y(pos[1])}" r="7" fill="var(--bg)" stroke="var(--pos)" stroke-width="2.5"/><circle cx="${X(neg[0])}" cy="${Y(neg[1])}" r="7" fill="var(--bg)" stroke="var(--neg)" stroke-width="2.5"/></g>`;
   const arrow=(x1,y1,x2,y2,col,wd)=>{const a=Math.atan2(y2-y1,x2-x1),L=11,B=5.5;const bx=x2-L*Math.cos(a),by=y2-L*Math.sin(a);
    return `<line class="grow" pathLength="1" x1="${x1}" y1="${y1}" x2="${bx}" y2="${by}" stroke="${col}" stroke-width="${wd}" stroke-linecap="round"/><polygon class="ahead" points="${x2},${y2} ${bx-B*Math.sin(a)},${by+B*Math.cos(a)} ${bx+B*Math.sin(a)},${by-B*Math.cos(a)}" fill="${col}"/>`;};
   s+=`<g id="g-raw">${arrow(X(neg[0])+8,Y(neg[1]),X(pos[0])-8,Y(pos[1]),'var(--muted)',1.5)}</g>`;
   const fy=Y(-0.47);s+=`<g id="g-fin"><line x1="${X(neg[0])}" x2="${X(pos[0])}" y1="${fy}" y2="${fy}" stroke="var(--bg)" stroke-width="9" class="ahead" style="transition-delay:0s"/>${arrow(X(neg[0]),fy,X(pos[0]),fy,'var(--ink)',2.5)}<text class="ahead" x="${X(pos[0])+14}" y="${fy+4.5}" style="font-size:12.5px;font-weight:500" fill="var(--ink)">valence direction</text></g>`;
   s+='</svg>';
-  return `<div class="duo flip">
-   <div class="pcard">
-    <span class="rlab">Example passage</span>
-    <div class="pstate" id="pstate"></div>
-    <div class="pq" id="pq"></div>
-    <div class="plist"><div><span class="k">Positive</span>${PSTATES.slice(0,4).map((p,i)=>`<i id="pi${i}">${p.k}</i>`).join(' · ')}</div>
-     <div><span class="k">Negative</span>${PSTATES.slice(4).map((p,i)=>`<i id="pi${i+4}">${p.k}</i>`).join(' · ')}</div>
-     <div><span class="k">Neutral</span><i id="pin">96 passages</i></div></div>
+  const chip=i=>`<button class="chip" data-ps="${i}" aria-pressed="false">${PSTATES[i].k}</button>`;
+  const quotes=PSTATES.map((st,i)=>st.ex.map((t,e)=>`<p class="pq" id="pq-${i}-${e}" style="--c:${st.v>0?'var(--pos)':'var(--neg)'}">${esc(t)}</p>`).join('')).join('')
+   +`<p class="pq note" id="pq-n-0" style="--c:var(--rand)">${NEUTRAL_NOTE}</p>`;
+  return `<div class="duo flip pv">
+   <div class="pcard" id="pcard">
+    <div class="phead"><span class="pstate" id="pstate"></span><span class="pex" id="pex"><span>Example</span><span class="seg" role="group" aria-label="Example passage"><button data-ex="0" aria-label="Example 1">1</button><button data-ex="1" aria-label="Example 2">2</button></span></span></div>
+    <div class="pstack">${quotes}</div>
+    <div class="ptimer" id="ptimer" aria-hidden="true"><i></i></div>
+    <div class="plist">
+     <div class="prow"><span class="k">Positive</span><span class="chips">${[0,1,2,3].map(chip).join('')}</span></div>
+     <div class="prow"><span class="k">Negative</span><span class="chips">${[4,5,6,7].map(chip).join('')}</span></div>
+     <div class="prow"><span class="k">Neutral</span><span class="chips"><button class="chip" data-ps="n" aria-pressed="false">96 passages</button></span></div>
+    </div>
    </div>
    <div class="scatter">${s}</div></div>`;},
- mount:()=>{applyDir(S.dirPhase,true);}
+ mount:()=>{applyDir(S.dirPhase,true);
+  const T=S.pTimer,el=T&&AUTO.on?performance.now()-T.t0:null;
+  showPassage(S.pState,S.pEx,el!=null&&el<T.dur?T.dur:0,el||0);}
 };
+const NEUTRAL_NOTE='Ninety-six affectively neutral passages. They contribute only the directions along which ordinary text varies most, which are removed from the valence direction.';
+// autoplay order alternates positive and negative states; example 1 for all eight, then example 2
+const PORDER=[0,4,1,5,2,6,3,7];
+const pDur=(i,e)=>i==='n'?7000:Math.round(1500+250*PSTATES[i].ex[e].split(/\s+/).length);
+function showPassage(i,e,dur=0,elapsed=0){
+ S.pState=i;S.pEx=i==='n'?0:e;S.pTimer=dur?{t0:performance.now()-elapsed,dur}:null;
+ const card=$('#pcard');if(!card)return;
+ const st=i==='n'?null:PSTATES[i],col=st?(st.v>0?'var(--pos)':'var(--neg)'):'var(--rand)';
+ card.style.setProperty('--c',col);
+ $('#pstate').innerHTML=st?`<b style="color:${col}">${st.n}</b> · ${st.v>0?'positive':'negative'}, 56 passages`:`<b style="color:var(--ink-2)">Neutral</b> · 96 passages`;
+ const want=`pq-${i}-${S.pEx}`;card.querySelectorAll('.pq').forEach(p=>p.classList.toggle('cur',p.id===want));
+ const ex=$('#pex');ex.style.visibility=st?'visible':'hidden';
+ ex.querySelectorAll('[data-ex]').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.ex===S.pEx));
+ card.querySelectorAll('[data-ps]').forEach(b=>{const on=b.dataset.ps===String(i);b.classList.toggle('cur',on);b.setAttribute('aria-pressed',on);});
+ const sc=$('.scatter');
+ if(sc){sc.querySelectorAll('.sel').forEach(g=>g.classList.remove('sel'));
+  const g=document.getElementById(i==='n'?'g-n':'g-s'+i);if(g)g.classList.add('sel');
+  const l=document.getElementById('l-s'+i);if(l)l.classList.add('sel');}
+ const tm=$('#ptimer'),bar=tm&&tm.firstElementChild;
+ if(bar){tm.classList.toggle('on',!!dur);bar.style.transition='none';bar.style.width=dur?(100*elapsed/dur).toFixed(2)+'%':'0';
+  if(dur){void bar.offsetWidth;bar.style.transition=`width ${Math.max(0,dur-elapsed)}ms linear`;bar.style.width='100%';}}
+}
+function stepPassage(s){
+ let k=PORDER.indexOf(S.pState),e=S.pEx;if(k<0){k=s>0?-1:0;}
+ k+=s;if(k>=PORDER.length){k=0;e=1-e;}else if(k<0){k=PORDER.length-1;e=1-e;}
+ showPassage(PORDER[k],e);
+}
 function applyDir(k,instant){
  const sc=$('.scatter');if(!sc)return;S.dirPhase=k;
  if(instant){sc.classList.add('notime');}
@@ -474,17 +524,8 @@ function applyDir(k,instant){
  on('g-n',k>=1);PSTATES.forEach((p,i)=>{on('g-s'+i,k>=2+i);on('l-s'+i,k>=2+i);});
  on('g-means',k>=10);on('g-raw',k>=11);on('g-ax',k>=12);on('g-fin',k>=13);
  const raw=$('#g-raw');if(raw)raw.classList.toggle('dim',k>=13);
+ sc.classList.toggle('done',k>=13);
  if(instant){void sc.offsetWidth;requestAnimationFrame(()=>sc.classList.remove('notime'));}
- // passage card
- const ps=$('#pstate'),pq=$('#pq');if(!ps)return;
- document.querySelectorAll('.plist i').forEach(e=>e.classList.remove('cur'));
- if(k>=10){ps.innerHTML=`<b style="color:var(--ink)">Valence direction</b>`;pq.classList.add('formula');pq.style.setProperty('--c','var(--ink)');
-  pq.innerHTML=`v = mean(positive) − mean(negative)<br>with 10 neutral components projected out`;return;}
- pq.classList.remove('formula');
- if(k<=1){ps.innerHTML=`<b style="color:var(--ink-2)">Neutral</b> · 96 passages`;pq.style.setProperty('--c','var(--rand)');pq.textContent='Affectively neutral passages, used only to find variation that has nothing to do with valence.';const e=$('#pin');if(e&&k===1)e.classList.add('cur');return;}
- const st=PSTATES[k-2];const col=st.v>0?'var(--pos)':'var(--neg)';
- ps.innerHTML=`<b style="color:${col}">${st.k[0].toUpperCase()+st.k.slice(1)}</b> · ${st.v>0?'positive':'negative'}, 56 passages`;pq.style.setProperty('--c',col);pq.textContent=st.t;
- const e=$('#pi'+(k-2));if(e)e.classList.add('cur');
 }
 let dirTimers=[];
 function playDir(){dirTimers.forEach(clearTimeout);dirTimers=[];if(RM){applyDir(13,true);return;}
@@ -561,19 +602,21 @@ const stage=$('#stage');
 function render(enter){
  const v=V[S.step];const m=enter?null:snap();
  stage.innerHTML=`<div class="hero"><h1>${v.head()}</h1><p>${v.sub()}</p></div>${v.body()}`;
- const nl=$('#notes');const ns=v.notes?v.notes():[];nl.hidden=!ns.length;nl.innerHTML=ns.map(n=>`<li>${n}</li>`).join('');
+ const cp=$('#coreP');if(cp.dataset.step!==S.step){cp.innerHTML=v.core||'';cp.dataset.step=S.step;}
  if(enter&&!RM){stage.classList.remove('enter');void stage.offsetWidth;stage.classList.add('enter');}
  v.mount&&v.mount();bindStage();morph(m);syncDock();
 }
 function bindStage(){
  const ms=$('#model');if(ms)ms.onchange=()=>{S.model=ms.value;if(S.model!=='OLMo-2-32B')S.ask='continue';render();};
  document.querySelectorAll('#stage [data-ask]').forEach(b=>b.onclick=()=>{if(b.disabled)return;S.ask=b.dataset.ask;render();});
+ document.querySelectorAll('#stage [data-ps]').forEach(b=>b.onclick=()=>{stopAuto();const v=b.dataset.ps,i=v==='n'?'n':+v;showPassage(i,i===S.pState?1-S.pEx:0);});
+ document.querySelectorAll('#stage [data-ex]').forEach(b=>b.onclick=()=>{stopAuto();showPassage(S.pState,+b.dataset.ex);});
 }
 function renderTabs(){
  $('#tabs').innerHTML=STEPS.map((s,i)=>`<button role="tab" id="tab-${s.id}" aria-selected="${S.step===s.id}" data-step="${s.id}"><span class="n">${i+1}</span>${s.t}</button>`).join('');
  document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>go(b.dataset.step));
 }
-function go(id){if(id===S.step)return;autoClear();dirTimers.forEach(clearTimeout);cancelAnimationFrame(readRaf);S.readProg=null;S.step=id;try{localStorage.setItem('hvl3-step',id)}catch(e){}renderTabs();render(true);AUTO.on=true;startAuto();}
+function go(id){if(id===S.step)return;autoClear();dirTimers.forEach(clearTimeout);cancelAnimationFrame(readRaf);S.readProg=null;S.step=id;try{localStorage.setItem('hvl3-step',id)}catch(e){}renderTabs();render(true);if(id==='vector')playDir();AUTO.on=true;startAuto();}
 
 /* ---------- dock ---------- */
 const dose=$('#dose');let dragging=false;
@@ -608,7 +651,7 @@ $('#rprev').onclick=()=>{S.rand=S.rand===1?24:S.rand-1;render();};
 $('#rnext').onclick=()=>{S.rand=S.rand===24?1:S.rand+1;render();};
 document.querySelectorAll('[data-zone]').forEach(b=>b.onclick=()=>{S.zone=b.dataset.zone;render();});
 document.querySelectorAll('[data-ck]').forEach(b=>b.onclick=()=>{S.ck=+b.dataset.ck;render();});
-$('#replay').onclick=()=>{if(S.step==='vector'){autoClear();playDir();if(AUTO.on)startAuto(true);}else{stopAuto();replay();}};
+$('#replay').onclick=()=>{if(S.step==='vector')playDir();else{stopAuto();replay();}};
 
 document.addEventListener('keydown',e=>{
  if(e.metaKey||e.ctrlKey||e.altKey)return;if(e.target.matches('select'))return;
@@ -616,7 +659,7 @@ document.addEventListener('keydown',e=>{
  if(/^[1-6]$/.test(k)){go(STEPS[+k-1].id);return;}
  if(k==='p'||k==='P'){toggleAuto();return;}
  if(['ArrowRight','ArrowLeft','r','R','z','Z',' '].includes(k))stopAuto();
- if(k==='ArrowRight'||k==='ArrowLeft'){e.preventDefault();const s=k==='ArrowRight'?1:-1;if(S.step==='origins'){S.ck=clamp(S.ck+s,0,3);render();}else stepDose(s);return;}
+ if(k==='ArrowRight'||k==='ArrowLeft'){e.preventDefault();const s=k==='ArrowRight'?1:-1;if(S.step==='origins'){S.ck=clamp(S.ck+s,0,3);render();}else if(S.step==='vector')stepPassage(s);else stepDose(s);return;}
  if(k==='r'||k==='R'){if(show[S.step].includes('dir')){S.dir=S.dir==='random'?'valence':'random';render();}return;}
  if(k==='z'||k==='Z'){if(S.step==='steer'){S.zone=other(S.zone);render();}return;}
  if(k===' '&&!e.target.matches('button')){if(S.step==='steer'){e.preventDefault();replay();}else if(S.step==='vector'){e.preventDefault();playDir();}}
@@ -640,7 +683,7 @@ function autoClear(){AUTO.gen++;AUTO.timers.forEach(clearTimeout);AUTO.timers=[]
 const wait=ms=>new Promise((res,rej)=>{const g=AUTO.gen;AUTO.timers.push(setTimeout(()=>g===AUTO.gen?res():rej(0),ms));});
 const live=g=>{if(g!==AUTO.gen)throw 0;};
 function syncAutoBtn(){const b=$('#autoBtn');b.textContent=AUTO.on?'Pause':'Resume';b.title=AUTO.on?'Pause the automatic walkthrough (P)':'Resume the automatic walkthrough (P)';b.setAttribute('aria-pressed',AUTO.on);}
-function stopAuto(){if(!AUTO.on)return;AUTO.on=false;autoClear();dirTimers.forEach(clearTimeout);if(S.step==='vector')applyDir(13,true);
+function stopAuto(){if(!AUTO.on)return;AUTO.on=false;autoClear();if(S.step==='vector'){dirTimers.forEach(clearTimeout);applyDir(13,true);showPassage(S.pState,S.pEx);}
  if(S.step==='steer'){tweenVis();}glideThumb();syncAutoBtn();}
 function toggleAuto(){if(AUTO.on)stopAuto();else{AUTO.on=true;syncAutoBtn();startAuto();}}
 function sweepTo(to,ms){return new Promise((res,rej)=>{const g=AUTO.gen,from=S.vis,t0=performance.now();sweeping=true;
@@ -649,7 +692,8 @@ function sweepTo(to,ms){return new Promise((res,rej)=>{const g=AUTO.gen,from=S.v
   if(u<1)requestAnimationFrame(f);else{sweeping=false;res();}};requestAnimationFrame(f);});}
 async function stepThrough(list,ms){for(const d of list){if(d!==S.dose)setDose(d);await wait(ms);}}
 const SEQ={
- vector:async g=>{while(true){playDir();await wait(DIR_LOOP);live(g);}},
+ vector:async g=>{let k=PORDER.indexOf(S.pState),e=S.pEx;if(k<0){k=0;e=0;}
+  while(true){const i=PORDER[k],d=pDur(i,e);showPassage(i,e,d);await wait(d);live(g);if(++k>=PORDER.length){k=0;e=1-e;}}},
  steer:async g=>{if(S.dose!==1){setDose(1);}await wait(500);
   while(true){await replay();live(g);await wait(1400);await sweepTo(S.dose>0?-1:1,4200);live(g);await wait(900);}},
  choose:async g=>{while(true){if(S.dir!=='valence'||S.ask!=='continue'){S.dir='valence';S.ask='continue';render();}
@@ -659,16 +703,15 @@ const SEQ={
  escape:async g=>{if(S.dir!=='valence'){S.dir='valence';render();}while(true){await stepThrough([1,0.5,0,-0.5,-1],1300);await wait(1500);await stepThrough([-0.5,0,0.5,1],1100);await wait(900);}},
  origins:async g=>{while(true){for(let i=0;i<4;i++){if(S.ck!==i){S.ck=i;render();}await wait(i===3?3200:1700);}}}
 };
-function startAuto(keepDir){autoClear();syncAutoBtn();if(!AUTO.on)return;
+function startAuto(){autoClear();syncAutoBtn();if(!AUTO.on)return;
  if(RM){if(S.step==='vector')applyDir(13,true);return;}
  const g=AUTO.gen;const run=SEQ[S.step];if(!run)return;
- if(S.step==='vector'&&keepDir){AUTO.timers.push(setTimeout(()=>{if(g===AUTO.gen)SEQ.vector(g).catch(()=>{});},DIR_LOOP));return;}
  run(g).catch(()=>{});}
 $('#autoBtn').onclick=toggleAuto;
 // any hands-on control stops the animation for this step
 document.addEventListener('pointerdown',e=>{if(e.target.closest('#autoBtn,#tabs'))return;if(e.target.closest('#dock button,#dock input,#stage button,#stage select'))stopAuto();},true);
 
-renderTabs();render(true);startAuto();
+renderTabs();render(true);if(S.step==='vector')playDir();startAuto();
 </script>
 </body>
 </html>
