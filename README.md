@@ -1,4 +1,4 @@
-# Hidden Valence Lab
+# Hidden Valence
 
 Interactive figures for [Language Models Act on Hidden Valence](https://arxiv.org/abs/2609.35591) (Berg & Kaiser, 2026).
 
